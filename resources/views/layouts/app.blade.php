@@ -16,7 +16,7 @@
 
     @include('partials.splash')
 
-    <div id="app" class="visible">
+    <div id="app">
         @include('partials.header')
 
         <div class="app-body">

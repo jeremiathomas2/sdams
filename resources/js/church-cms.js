@@ -4,10 +4,50 @@ let currentPage = 'dashboard';
 
 // ========== SPLASH ==========
 window.addEventListener('load', () => {
-  setTimeout(() => {
     const splash = document.getElementById('splash');
-    if (splash) splash.classList.add('hidden');
-  }, 2800);
+    const app = document.getElementById('app');
+    const authContainer = document.getElementById('auth-container');
+
+    // Check if splash has already been shown in this session
+    const splashShown = sessionStorage.getItem('splashShown');
+
+    if (splashShown) {
+        // Immediately show content if splash was already shown
+        if (splash) {
+            splash.style.display = 'none';
+        }
+        if (app) {
+            app.classList.add('visible');
+        }
+        if (authContainer) {
+            authContainer.style.opacity = '1';
+            authContainer.style.visibility = 'visible';
+        }
+    } else {
+        // First time in this session: show the splash animation
+        if (authContainer) {
+            authContainer.style.opacity = '0';
+            authContainer.style.visibility = 'hidden';
+        }
+
+        setTimeout(() => {
+            if (splash) {
+                splash.classList.add('hidden');
+            }
+            
+            if (app) {
+                app.classList.add('visible');
+            }
+            
+            if (authContainer) {
+                authContainer.style.opacity = '1';
+                authContainer.style.visibility = 'visible';
+            }
+
+            // Mark splash as shown for the rest of the session
+            sessionStorage.setItem('splashShown', 'true');
+        }, 2800);
+    }
 });
 
 // ========== AUTH (UI ONLY) ==========
