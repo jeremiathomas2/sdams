@@ -1,0 +1,1635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDA Church Management System</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:ital,opsz,wght@0,6..12,300;0,6..12,400;0,6..12,500;0,6..12,600;0,6..12,700;0,6..12,800;1,6..12,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a56a0;
+  --primary-dark: #0e3a70;
+  --primary-light: #2d7dd2;
+  --accent: #e8a020;
+  --accent-dark: #c07010;
+  --sidebar-bg: #1a2744;
+  --sidebar-text: #c8d6f0;
+  --sidebar-hover: #2a3a60;
+  --sidebar-active: #1a56a0;
+  --header-bg: #1a56a0;
+  --header-text: #ffffff;
+  --footer-bg: #1a2744;
+  --footer-text: #8a9bc0;
+  --hover-anim: all 0.22s cubic-bezier(.4,0,.2,1);
+  --transition: all 0.3s cubic-bezier(.4,0,.2,1);
+  --radius: 10px;
+  --radius-lg: 16px;
+  --shadow: 0 2px 16px rgba(26,86,160,0.10);
+  --shadow-lg: 0 8px 32px rgba(26,86,160,0.18);
+  --bg: #f0f4fa;
+  --card: #ffffff;
+  --text: #1a2744;
+  --text-muted: #6b7a99;
+  --border: #dde4f0;
+  --success: #16a34a;
+  --danger: #dc2626;
+  --warning: #d97706;
+  --info: #0891b2;
+  --sidebar-width: 270px;
+  --header-height: 64px;
+}
+[data-theme="dark"] {
+  --bg: #111827;
+  --card: #1f2937;
+  --text: #e5e9f0;
+  --text-muted: #9ca3af;
+  --border: #374151;
+  --shadow: 0 2px 16px rgba(0,0,0,0.3);
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Nunito Sans', sans-serif; background: var(--bg); color: var(--text); transition: background 0.3s, color 0.3s; }
+a { text-decoration: none; color: inherit; }
+button { font-family: 'Nunito Sans', sans-serif; cursor: pointer; border: none; outline: none; }
+input, select, textarea { font-family: 'Nunito Sans', sans-serif; }
+
+/* ========== SPLASH ========== */
+#splash {
+  position: fixed; inset: 0; background: linear-gradient(135deg, #0e1f44 0%, #1a3570 40%, #1a56a0 100%);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 9999; transition: opacity 0.6s, visibility 0.6s;
+}
+#splash.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.splash-logo { width: 120px; height: 120px; margin-bottom: 24px; animation: splashPop 0.8s cubic-bezier(.34,1.56,.64,1) forwards; }
+.splash-title { font-size: 2.2rem; font-weight: 800; color: #fff; letter-spacing: -0.5px; text-align: center; animation: splashFadeUp 0.8s 0.2s both; }
+.splash-sub { font-size: 1rem; color: rgba(255,255,255,0.65); margin-top: 8px; animation: splashFadeUp 0.8s 0.4s both; }
+.splash-bar { width: 220px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 99px; margin-top: 40px; overflow: hidden; animation: splashFadeUp 0.8s 0.5s both; }
+.splash-progress { height: 100%; background: var(--accent); border-radius: 99px; width: 0; animation: loadBar 2.2s 0.6s cubic-bezier(.4,0,.2,1) forwards; }
+@keyframes splashPop { from{transform:scale(0.4) rotate(-10deg);opacity:0} to{transform:scale(1) rotate(0);opacity:1} }
+@keyframes splashFadeUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+@keyframes loadBar { from{width:0} to{width:100%} }
+
+/* ========== AUTH PAGES ========== */
+#auth-container {
+  position: fixed; inset: 0; background: linear-gradient(135deg, #0e1f44 0%, #1a3570 50%, #1a56a0 100%);
+  display: flex; align-items: center; justify-content: center; z-index: 1000;
+  transition: opacity 0.5s, visibility 0.5s;
+}
+#auth-container.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+.auth-bg-circles { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.auth-bg-circles span { position: absolute; border-radius: 50%; background: rgba(255,255,255,0.04); }
+.auth-bg-circles span:nth-child(1) { width: 400px; height: 400px; top: -100px; left: -100px; }
+.auth-bg-circles span:nth-child(2) { width: 300px; height: 300px; bottom: -50px; right: -50px; }
+.auth-bg-circles span:nth-child(3) { width: 200px; height: 200px; top: 50%; right: 15%; background: rgba(232,160,32,0.06); }
+.auth-card {
+  background: rgba(255,255,255,0.97); border-radius: var(--radius-lg); padding: 40px 44px;
+  width: 100%; max-width: 440px; box-shadow: var(--shadow-lg); position: relative; z-index: 1;
+  animation: authSlide 0.5s cubic-bezier(.34,1.2,.64,1);
+}
+[data-theme="dark"] .auth-card { background: #1f2937; }
+@keyframes authSlide { from{transform:translateY(30px);opacity:0} to{transform:translateY(0);opacity:1} }
+.auth-logo { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; justify-content: center; flex-direction: column; }
+.auth-logo img { width: 64px; height: 64px; }
+.auth-logo-text { text-align: center; }
+.auth-logo-text h2 { font-size: 1.15rem; font-weight: 800; color: var(--primary); line-height: 1.2; }
+.auth-logo-text p { font-size: 0.78rem; color: var(--text-muted); }
+.auth-title { font-size: 1.4rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.auth-sub { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 24px; }
+.auth-page { display: none; }
+.auth-page.active { display: block; animation: authSlide 0.35s cubic-bezier(.34,1.2,.64,1); }
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.form-input {
+  width: 100%; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 0.93rem; color: var(--text); background: var(--bg); transition: var(--hover-anim);
+}
+.form-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,160,0.12); outline: none; }
+.input-icon-wrap { position: relative; }
+.input-icon-wrap .form-input { padding-left: 42px; }
+.input-icon { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--text-muted); }
+.input-eye { position: absolute; right: 13px; top: 50%; transform: translateY(-50%); cursor: pointer; color: var(--text-muted); transition: var(--hover-anim); }
+.input-eye:hover { color: var(--primary); }
+.btn-primary {
+  width: 100%; padding: 12px; background: var(--primary); color: #fff; border-radius: 8px;
+  font-size: 0.95rem; font-weight: 700; transition: var(--hover-anim); margin-top: 4px;
+}
+.btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(26,86,160,0.3); }
+.btn-primary:active { transform: translateY(0); }
+.auth-link { text-align: center; margin-top: 16px; font-size: 0.87rem; color: var(--text-muted); }
+.auth-link a { color: var(--primary); font-weight: 600; cursor: pointer; }
+.auth-link a:hover { text-decoration: underline; }
+.auth-divider { display: flex; align-items: center; gap: 12px; margin: 18px 0; }
+.auth-divider::before, .auth-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+.auth-divider span { font-size: 0.8rem; color: var(--text-muted); white-space: nowrap; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.strength-bar { display: flex; gap: 4px; margin-top: 6px; }
+.strength-seg { flex: 1; height: 3px; border-radius: 99px; background: var(--border); transition: var(--hover-anim); }
+.strength-seg.weak { background: var(--danger); }
+.strength-seg.fair { background: var(--warning); }
+.strength-seg.strong { background: var(--success); }
+.otp-inputs { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
+.otp-input { width: 48px; height: 52px; text-align: center; font-size: 1.3rem; font-weight: 700; border: 1.5px solid var(--border); border-radius: 8px; background: var(--bg); color: var(--text); transition: var(--hover-anim); }
+.otp-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,160,0.12); outline: none; }
+.alert { padding: 10px 14px; border-radius: 8px; font-size: 0.86rem; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.alert-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.alert-success { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+/* ========== APP SHELL ========== */
+#app {
+  display: none; min-height: 100vh; flex-direction: column;
+}
+#app.visible { display: flex; }
+.app-body { display: flex; flex: 1; min-height: 0; padding-top: var(--header-height); }
+
+/* ========== HEADER ========== */
+.app-header {
+  position: fixed; top: 0; left: 0; right: 0; height: var(--header-height);
+  background: var(--header-bg); color: var(--header-text); z-index: 500;
+  display: flex; align-items: center; padding: 0 20px 0 0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18); transition: background 0.3s;
+}
+.header-brand {
+  width: var(--sidebar-width); display: flex; align-items: center; gap: 10px;
+  padding: 0 18px; flex-shrink: 0; transition: var(--transition);
+}
+.header-brand img { width: 36px; height: 36px; }
+.header-brand-text h1 { font-size: 0.9rem; font-weight: 800; line-height: 1.2; }
+.header-brand-text p { font-size: 0.68rem; opacity: 0.75; }
+.header-toggle {
+  background: none; color: #fff; padding: 8px; border-radius: 8px;
+  margin-right: 12px; transition: var(--hover-anim); display: flex;
+}
+.header-toggle:hover { background: rgba(255,255,255,0.15); }
+.header-spacer { flex: 1; }
+.header-search {
+  display: flex; align-items: center; background: rgba(255,255,255,0.15); border-radius: 8px;
+  padding: 0 12px; gap: 8px; height: 36px; margin-right: 12px; min-width: 220px; transition: var(--hover-anim);
+}
+.header-search:focus-within { background: rgba(255,255,255,0.25); }
+.header-search input { background: none; border: none; outline: none; color: #fff; font-size: 0.88rem; width: 100%; }
+.header-search input::placeholder { color: rgba(255,255,255,0.6); }
+.header-search svg { color: rgba(255,255,255,0.7); flex-shrink: 0; }
+.header-actions { display: flex; align-items: center; gap: 4px; }
+.header-icon-btn {
+  width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center;
+  background: none; color: #fff; transition: var(--hover-anim); position: relative;
+}
+.header-icon-btn:hover { background: rgba(255,255,255,0.18); }
+.notif-badge {
+  position: absolute; top: 5px; right: 5px; width: 16px; height: 16px; background: var(--accent);
+  border-radius: 50%; font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; justify-content: center;
+}
+.header-avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700;
+  cursor: pointer; border: 2px solid rgba(255,255,255,0.3); transition: var(--hover-anim); margin-left: 4px;
+  position: relative;
+}
+.header-avatar:hover { transform: scale(1.08); border-color: rgba(255,255,255,0.6); }
+.avatar-dropdown {
+  position: absolute; top: calc(100% + 10px); right: 0; background: var(--card); border-radius: 12px;
+  box-shadow: var(--shadow-lg); min-width: 200px; border: 1px solid var(--border); overflow: hidden;
+  display: none; z-index: 999;
+}
+.avatar-dropdown.open { display: block; animation: dropIn 0.2s ease; }
+@keyframes dropIn { from{transform:translateY(-8px);opacity:0} to{transform:translateY(0);opacity:1} }
+.avatar-dropdown-header { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.avatar-dropdown-header h4 { font-size: 0.9rem; font-weight: 700; }
+.avatar-dropdown-header p { font-size: 0.78rem; color: var(--text-muted); }
+.avatar-dropdown a { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 0.88rem; color: var(--text); transition: var(--hover-anim); }
+.avatar-dropdown a:hover { background: var(--bg); color: var(--primary); }
+.avatar-dropdown a svg { width: 16px; height: 16px; }
+.avatar-dropdown-divider { border: none; border-top: 1px solid var(--border); }
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+  width: var(--sidebar-width); background: var(--sidebar-bg); color: var(--sidebar-text);
+  position: fixed; top: var(--header-height); bottom: 0; left: 0; overflow-y: auto; overflow-x: hidden;
+  z-index: 400; transition: var(--transition); display: flex; flex-direction: column;
+}
+.sidebar.collapsed { width: 64px; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
+.sidebar-section { padding: 12px 10px 4px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(200,214,240,0.45); white-space: nowrap; overflow: hidden; }
+.sidebar-item { position: relative; }
+.sidebar-link {
+  display: flex; align-items: center; gap: 11px; padding: 10px 14px; border-radius: 8px;
+  margin: 1px 8px; cursor: pointer; transition: var(--hover-anim);
+  color: var(--sidebar-text); font-size: 0.9rem; font-weight: 500; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis; user-select: none;
+}
+.sidebar-link svg { width: 20px; height: 20px; flex-shrink: 0; transition: var(--hover-anim); }
+.sidebar-link:hover { background: var(--sidebar-hover); color: #fff; transform: translateX(2px); }
+.sidebar-link.active { background: var(--sidebar-active); color: #fff; font-weight: 700; }
+.sidebar-link .arrow {
+  margin-left: auto; transition: transform 0.25s; color: rgba(200,214,240,0.5);
+  flex-shrink: 0;
+}
+.sidebar-link.open .arrow { transform: rotate(90deg); }
+.sidebar-badge {
+  margin-left: auto; background: var(--accent); color: #fff; font-size: 0.65rem;
+  font-weight: 700; padding: 2px 7px; border-radius: 99px; flex-shrink: 0;
+}
+.sidebar-submenu {
+  overflow: hidden; max-height: 0; transition: max-height 0.3s cubic-bezier(.4,0,.2,1);
+}
+.sidebar-submenu.open { max-height: 600px; }
+.sidebar-sub-link {
+  display: flex; align-items: center; gap: 10px; padding: 8px 14px 8px 44px;
+  border-radius: 8px; margin: 1px 8px; cursor: pointer; transition: var(--hover-anim);
+  color: rgba(200,214,240,0.7); font-size: 0.86rem; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sidebar-sub-link:before { content:''; width:5px; height:5px; border-radius:50%; background:rgba(200,214,240,0.4); flex-shrink:0; }
+.sidebar-sub-link:hover { color: #fff; background: rgba(255,255,255,0.07); transform: translateX(2px); }
+.sidebar-sub-link.active { color: var(--accent); font-weight: 600; }
+.sidebar-sub-link.active:before { background: var(--accent); }
+.sidebar-footer { margin-top: auto; padding: 12px 8px; border-top: 1px solid rgba(255,255,255,0.07); }
+.sidebar.collapsed .sidebar-section,
+.sidebar.collapsed .sidebar-link span:not(.sidebar-badge),
+.sidebar.collapsed .arrow,
+.sidebar.collapsed .sidebar-sub-link span { display: none; }
+.sidebar.collapsed .sidebar-link { justify-content: center; padding: 10px; }
+.sidebar.collapsed .sidebar-badge { position: absolute; top: 6px; right: 6px; padding: 1px 5px; }
+
+/* ========== MAIN CONTENT ========== */
+.main-content {
+  flex: 1; margin-left: var(--sidebar-width); padding: 28px 28px 80px; transition: margin-left 0.3s;
+  min-width: 0;
+}
+.sidebar.collapsed ~ .main-content,
+body.collapsed .main-content { margin-left: 64px; }
+.page { display: none; animation: pageIn 0.3s ease; }
+.page.active { display: block; }
+@keyframes pageIn { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.page-header h2 { font-size: 1.5rem; font-weight: 800; color: var(--text); }
+.page-header p { font-size: 0.88rem; color: var(--text-muted); margin-top: 2px; }
+.breadcrumb { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 8px; }
+.breadcrumb span { color: var(--primary); font-weight: 600; }
+
+/* ========== CARDS & STATS ========== */
+.card { background: var(--card); border-radius: var(--radius-lg); border: 1px solid var(--border); padding: 20px 22px; transition: var(--hover-anim); }
+.card:hover { box-shadow: var(--shadow); }
+.card-title { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+.card-sub { font-size: 0.82rem; color: var(--text-muted); }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card { background: var(--card); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border); display: flex; align-items: flex-start; gap: 14px; transition: var(--hover-anim); cursor: default; }
+.stat-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.stat-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.stat-icon svg { width: 24px; height: 24px; }
+.stat-val { font-size: 1.6rem; font-weight: 800; color: var(--text); line-height: 1; }
+.stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+.stat-change { font-size: 0.78rem; margin-top: 6px; font-weight: 600; }
+.stat-change.up { color: var(--success); }
+.stat-change.down { color: var(--danger); }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+.grid-auto { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+/* ========== TABLE ========== */
+.table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+thead th { background: var(--bg); color: var(--text-muted); font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 14px; text-align: left; white-space: nowrap; border-bottom: 1px solid var(--border); }
+tbody tr { transition: var(--hover-anim); }
+tbody tr:hover { background: var(--bg); }
+tbody td { padding: 12px 14px; border-bottom: 1px solid var(--border); color: var(--text); }
+tbody tr:last-child td { border-bottom: none; }
+
+/* ========== BADGES ========== */
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 99px; font-size: 0.75rem; font-weight: 700; }
+.badge-success { background: #dcfce7; color: #15803d; }
+.badge-danger { background: #fee2e2; color: #dc2626; }
+.badge-warning { background: #fef9c3; color: #b45309; }
+.badge-info { background: #dbeafe; color: #1d4ed8; }
+.badge-secondary { background: var(--bg); color: var(--text-muted); border: 1px solid var(--border); }
+[data-theme="dark"] .badge-success { background: #14532d; color: #86efac; }
+[data-theme="dark"] .badge-danger { background: #7f1d1d; color: #fca5a5; }
+[data-theme="dark"] .badge-warning { background: #78350f; color: #fcd34d; }
+[data-theme="dark"] .badge-info { background: #1e3a5f; color: #93c5fd; }
+
+/* ========== BUTTONS ========== */
+.btn { display: inline-flex; align-items: center; gap: 7px; padding: 9px 18px; border-radius: 8px; font-size: 0.88rem; font-weight: 700; cursor: pointer; transition: var(--hover-anim); border: none; }
+.btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+.btn-primary-solid { background: var(--primary); color: #fff; }
+.btn-primary-solid:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(26,86,160,0.3); }
+.btn-outline { background: transparent; color: var(--primary); border: 1.5px solid var(--primary); }
+.btn-outline:hover { background: var(--primary); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
+.btn-danger:hover { background: #b91c1c; }
+.btn-success { background: var(--success); color: #fff; }
+.btn-success:hover { background: #15803d; }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-accent:hover { background: var(--accent-dark); }
+.btn-ghost { background: transparent; color: var(--text-muted); }
+.btn-ghost:hover { background: var(--bg); color: var(--text); }
+.btn svg { width: 16px; height: 16px; }
+
+/* ========== FORMS ========== */
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+.form-group-app { margin-bottom: 16px; }
+.form-label-app { display: block; font-size: 0.83rem; font-weight: 600; color: var(--text); margin-bottom: 5px; }
+.form-control {
+  width: 100%; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: 8px;
+  font-size: 0.9rem; color: var(--text); background: var(--card); transition: var(--hover-anim);
+}
+.form-control:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(26,86,160,0.1); outline: none; }
+select.form-control { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a99' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+textarea.form-control { resize: vertical; min-height: 90px; }
+
+/* ========== MODALS ========== */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 800; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: var(--hover-anim); }
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal { background: var(--card); border-radius: var(--radius-lg); width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); transform: scale(0.95) translateY(10px); transition: var(--hover-anim); }
+.modal-overlay.open .modal { transform: scale(1) translateY(0); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
+.modal-title { font-size: 1.05rem; font-weight: 700; }
+.modal-close { background: none; color: var(--text-muted); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: var(--hover-anim); }
+.modal-close:hover { background: var(--bg); color: var(--text); }
+.modal-body { padding: 24px; }
+.modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; gap: 10px; justify-content: flex-end; }
+
+/* ========== FOOTER ========== */
+.app-footer { background: var(--footer-bg); color: var(--footer-text); text-align: center; padding: 12px 20px; font-size: 0.78rem; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; transition: background 0.3s; }
+
+/* ========== SETTINGS PANEL ========== */
+.settings-panel {
+  position: fixed; top: 0; right: -340px; bottom: 0; width: 340px; background: var(--card);
+  box-shadow: -4px 0 24px rgba(0,0,0,0.15); z-index: 900; transition: right 0.35s cubic-bezier(.4,0,.2,1);
+  overflow-y: auto; display: flex; flex-direction: column;
+}
+.settings-panel.open { right: 0; }
+.settings-panel-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.settings-panel-header h3 { font-size: 1rem; font-weight: 700; }
+.settings-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+.settings-section h4 { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-muted); margin-bottom: 12px; }
+.color-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.color-row label { font-size: 0.87rem; color: var(--text); }
+.color-swatch input[type=color] { width: 36px; height: 28px; border: 1.5px solid var(--border); border-radius: 6px; cursor: pointer; padding: 2px; background: var(--card); }
+.toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.toggle-row label { font-size: 0.87rem; color: var(--text); }
+.toggle { position: relative; width: 44px; height: 24px; }
+.toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 99px; cursor: pointer; transition: var(--hover-anim); }
+.toggle-slider::before { content:''; position:absolute; width:18px; height:18px; background:#fff; border-radius:50%; top:3px; left:3px; transition: var(--hover-anim); }
+.toggle input:checked + .toggle-slider { background: var(--primary); }
+.toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+.select-style { width: 100%; padding: 8px 12px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 0.87rem; background: var(--bg); color: var(--text); margin-top: 4px; }
+.settings-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 899; display: none; }
+.settings-overlay.open { display: block; }
+
+/* ========== CHARTS PLACEHOLDER ========== */
+.chart-placeholder { height: 200px; border-radius: 10px; background: linear-gradient(135deg, rgba(26,86,160,0.07), rgba(26,86,160,0.03)); display: flex; align-items: flex-end; padding: 12px; gap: 8px; border: 1px dashed var(--border); }
+.chart-bar { flex: 1; border-radius: 6px 6px 0 0; background: var(--primary); opacity: 0.7; transition: var(--hover-anim); cursor: default; }
+.chart-bar:hover { opacity: 1; transform: scaleY(1.04); transform-origin: bottom; }
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 900px) {
+  .sidebar { transform: translateX(-100%); }
+  .sidebar.mobile-open { transform: translateX(0); }
+  .main-content { margin-left: 0 !important; }
+  .header-brand { width: auto; }
+  .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  .form-row { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .main-content { padding: 16px 12px 70px; }
+  .header-search { display: none; }
+  .auth-card { padding: 28px 20px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ========== ACTIVITY FEED ========== */
+.activity-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.activity-item:last-child { border-bottom: none; }
+.activity-icon { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.activity-icon svg { width: 16px; height: 16px; }
+.activity-text { font-size: 0.87rem; color: var(--text); }
+.activity-time { font-size: 0.77rem; color: var(--text-muted); margin-top: 3px; }
+
+/* ========== PROGRESS ========== */
+.progress { height: 8px; border-radius: 99px; background: var(--bg); overflow: hidden; }
+.progress-bar { height: 100%; border-radius: 99px; background: var(--primary); transition: width 0.6s cubic-bezier(.4,0,.2,1); }
+
+/* ========== TRANSFER TIMELINE ========== */
+.timeline { position: relative; padding-left: 28px; }
+.timeline::before { content:''; position:absolute; left:9px; top:4px; bottom:4px; width:2px; background:var(--border); }
+.timeline-item { position: relative; padding-bottom: 20px; }
+.timeline-item:last-child { padding-bottom: 0; }
+.timeline-dot { position:absolute; left:-24px; top:4px; width:12px; height:12px; border-radius:50%; border:2px solid var(--primary); background:var(--card); }
+.timeline-dot.done { background:var(--primary); }
+.timeline-label { font-size:0.85rem; font-weight:700; color:var(--text); }
+.timeline-sub { font-size:0.78rem; color:var(--text-muted); }
+
+/* ========== DONUT CHART SIMPLE ========== */
+.donut-wrap { display:flex; align-items:center; gap:20px; }
+.donut-legend { display:flex; flex-direction:column; gap:8px; }
+.legend-item { display:flex; align-items:center; gap:8px; font-size:0.82rem; }
+.legend-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+/* ========== NOTIFICATION TOAST ========== */
+.toast-container { position:fixed; top:76px; right:20px; z-index:9000; display:flex; flex-direction:column; gap:8px; }
+.toast { background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px; box-shadow:var(--shadow-lg); display:flex; align-items:flex-start; gap:10px; min-width:280px; max-width:340px; animation:toastIn 0.3s ease; }
+.toast.removing { animation:toastOut 0.3s ease forwards; }
+@keyframes toastIn { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
+@keyframes toastOut { from{transform:translateX(0);opacity:1} to{transform:translateX(100%);opacity:0} }
+.toast-icon { width:20px; height:20px; flex-shrink:0; margin-top:1px; }
+.toast-title { font-size:0.87rem; font-weight:700; }
+.toast-msg { font-size:0.8rem; color:var(--text-muted); margin-top:2px; }
+.member-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; flex-shrink:0; background:rgba(26,86,160,0.12); color:var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ========== SPLASH ========== -->
+<div id="splash">
+  <div class="auth-bg-circles"><span></span><span></span><span></span></div>
+  <img class="splash-logo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='96' fill='%23ffffff' stroke='%231a56a0' stroke-width='6'/%3E%3Ccircle cx='100' cy='100' r='80' fill='none' stroke='%231a56a0' stroke-width='3'/%3E%3Ctext x='100' y='118' text-anchor='middle' font-family='serif' font-size='48' font-weight='bold' fill='%231a56a0'%3E✝%3C/text%3E%3Ctext x='100' y='152' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='700' fill='%231a56a0' letter-spacing='1'%3ESDA CHURCH%3C/text%3E%3C/svg%3E" alt="SDA Logo">
+  <div class="splash-title">SDA Church Management</div>
+  <div class="splash-sub">Seventh-day Adventist Church System</div>
+  <div class="splash-bar"><div class="splash-progress"></div></div>
+</div>
+
+<!-- ========== AUTH CONTAINER ========== -->
+<div id="auth-container">
+  <div class="auth-bg-circles"><span></span><span></span><span></span></div>
+
+  <!-- LOGIN PAGE -->
+  <div class="auth-card" id="authCard">
+    <div class="auth-logo">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='96' fill='%23ffffff' stroke='%231a56a0' stroke-width='6'/%3E%3Ccircle cx='100' cy='100' r='80' fill='none' stroke='%231a56a0' stroke-width='3'/%3E%3Ctext x='100' y='118' text-anchor='middle' font-family='serif' font-size='48' font-weight='bold' fill='%231a56a0'%3E✝%3C/text%3E%3Ctext x='100' y='152' text-anchor='middle' font-family='sans-serif' font-size='11' font-weight='700' fill='%231a56a0' letter-spacing='1'%3ESDA CHURCH%3C/text%3E%3C/svg%3E" alt="SDA Logo" width="64">
+      <div class="auth-logo-text">
+        <h2>SDA Church Management System</h2>
+        <p>Seventh-day Adventist Church</p>
+      </div>
+    </div>
+
+    <!-- Login -->
+    <div class="auth-page active" id="page-login">
+      <div class="auth-title">Welcome Back</div>
+      <div class="auth-sub">Sign in to your account to continue</div>
+      <div class="alert alert-danger" id="login-error" style="display:none">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Invalid username or password.
+      </div>
+      <div class="form-group">
+        <label class="form-label">Username or Email</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <input class="form-input" type="text" id="login-user" placeholder="admin@church.org" value="admin">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="form-input" type="password" id="login-pass" placeholder="••••••••" value="admin123">
+          <span class="input-eye" onclick="togglePwd('login-pass',this)">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+        <label style="display:flex;align-items:center;gap:7px;font-size:0.85rem;color:var(--text-muted);cursor:pointer;">
+          <input type="checkbox" style="accent-color:var(--primary)"> Remember me
+        </label>
+        <a style="font-size:0.85rem;color:var(--primary);font-weight:600;cursor:pointer;" onclick="showAuthPage('page-reset')">Forgot password?</a>
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Sign In</button>
+      <div class="auth-divider"><span>New to the system?</span></div>
+      <div class="auth-link"><a onclick="showAuthPage('page-register')">Create an account →</a></div>
+    </div>
+
+    <!-- Register -->
+    <div class="auth-page" id="page-register">
+      <div class="auth-title">Create Account</div>
+      <div class="auth-sub">Register a new administrator account</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">First Name</label>
+          <input class="form-input" type="text" placeholder="John">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Last Name</label>
+          <input class="form-input" type="text" placeholder="Doe">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          <input class="form-input" type="email" placeholder="john@church.org">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role</label>
+        <select class="form-input">
+          <option>Administrator</option><option>Finance Clerk</option><option>Membership Clerk</option><option>Pastor</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="form-input" type="password" placeholder="Create a strong password" id="reg-pass" oninput="checkStrength(this.value)">
+          <span class="input-eye" onclick="togglePwd('reg-pass',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></span>
+        </div>
+        <div class="strength-bar"><div class="strength-seg" id="s1"></div><div class="strength-seg" id="s2"></div><div class="strength-seg" id="s3"></div><div class="strength-seg" id="s4"></div></div>
+        <div style="font-size:0.77rem;color:var(--text-muted);margin-top:4px;" id="strength-label">Enter a password</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Confirm Password</label>
+        <div class="input-icon-wrap">
+          <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <input class="form-input" type="password" placeholder="Repeat password">
+        </div>
+      </div>
+      <button class="btn-primary" onclick="doLogin()">Create Account</button>
+      <div class="auth-link"><a onclick="showAuthPage('page-login')">← Back to Sign In</a></div>
+    </div>
+
+    <!-- Reset Password -->
+    <div class="auth-page" id="page-reset">
+      <div class="auth-title">Reset Password</div>
+      <div class="auth-sub">Enter your email to receive a verification code</div>
+      <div id="reset-step1">
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-icon-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <input class="form-input" type="email" placeholder="your@email.org">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="showResetStep2()">Send Verification Code</button>
+      </div>
+      <div id="reset-step2" style="display:none">
+        <div class="alert alert-success"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Code sent to your email!</div>
+        <div style="text-align:center;margin-bottom:8px;font-size:0.87rem;color:var(--text-muted);">Enter the 6-digit code</div>
+        <div class="otp-inputs">
+          <input class="otp-input" maxlength="1" oninput="otpNext(this,0)">
+          <input class="otp-input" maxlength="1" oninput="otpNext(this,1)">
+          <input class="otp-input" maxlength="1" oninput="otpNext(this,2)">
+          <input class="otp-input" maxlength="1" oninput="otpNext(this,3)">
+          <input class="otp-input" maxlength="1" oninput="otpNext(this,4)">
+          <input class="otp-input" maxlength="1" oninput="otpNext(this,5)">
+        </div>
+        <div class="form-group">
+          <label class="form-label">New Password</label>
+          <div class="input-icon-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input class="form-input" type="password" placeholder="New password">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirm New Password</label>
+          <div class="input-icon-wrap">
+            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input class="form-input" type="password" placeholder="Confirm new password">
+          </div>
+        </div>
+        <button class="btn-primary" onclick="showAuthPage('page-login');showToast('Password Reset','Your password has been reset successfully.','success')">Reset Password</button>
+      </div>
+      <div class="auth-link" style="margin-top:14px"><a onclick="showAuthPage('page-login')">← Back to Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== SETTINGS OVERLAY ========== -->
+<div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+
+<!-- ========== SETTINGS PANEL ========== -->
+<div class="settings-panel" id="settingsPanel">
+  <div class="settings-panel-header">
+    <h3>⚙️ Customize</h3>
+    <button class="modal-close" onclick="toggleSettings()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="settings-section">
+    <h4>Theme</h4>
+    <div class="toggle-row"><label>Dark Mode</label><label class="toggle"><input type="checkbox" id="darkToggle" onchange="toggleDark(this)"><span class="toggle-slider"></span></label></div>
+  </div>
+  <div class="settings-section">
+    <h4>Header</h4>
+    <div class="color-row"><label>Background</label><div class="color-swatch"><input type="color" value="#1a56a0" onchange="setCSSVar('--header-bg',this.value)"></div></div>
+    <div class="color-row"><label>Text Color</label><div class="color-swatch"><input type="color" value="#ffffff" onchange="setCSSVar('--header-text',this.value)"></div></div>
+  </div>
+  <div class="settings-section">
+    <h4>Sidebar</h4>
+    <div class="color-row"><label>Background</label><div class="color-swatch"><input type="color" value="#1a2744" onchange="setCSSVar('--sidebar-bg',this.value)"></div></div>
+    <div class="color-row"><label>Active Item</label><div class="color-swatch"><input type="color" value="#1a56a0" onchange="setCSSVar('--sidebar-active',this.value)"></div></div>
+    <div class="color-row"><label>Hover Item</label><div class="color-swatch"><input type="color" value="#2a3a60" onchange="setCSSVar('--sidebar-hover',this.value)"></div></div>
+    <div class="color-row"><label>Text Color</label><div class="color-swatch"><input type="color" value="#c8d6f0" onchange="setCSSVar('--sidebar-text',this.value)"></div></div>
+  </div>
+  <div class="settings-section">
+    <h4>Footer</h4>
+    <div class="color-row"><label>Background</label><div class="color-swatch"><input type="color" value="#1a2744" onchange="setCSSVar('--footer-bg',this.value)"></div></div>
+    <div class="color-row"><label>Text Color</label><div class="color-swatch"><input type="color" value="#8a9bc0" onchange="setCSSVar('--footer-text',this.value)"></div></div>
+  </div>
+  <div class="settings-section">
+    <h4>Accent & Primary</h4>
+    <div class="color-row"><label>Primary Color</label><div class="color-swatch"><input type="color" value="#1a56a0" onchange="setCSSVar('--primary',this.value)"></div></div>
+    <div class="color-row"><label>Accent Color</label><div class="color-swatch"><input type="color" value="#e8a020" onchange="setCSSVar('--accent',this.value)"></div></div>
+  </div>
+  <div class="settings-section">
+    <h4>Animations</h4>
+    <div class="toggle-row"><label>Hover Transitions</label><label class="toggle"><input type="checkbox" checked onchange="toggleAnim('hover',this)"><span class="toggle-slider"></span></label></div>
+    <div class="toggle-row"><label>Page Transitions</label><label class="toggle"><input type="checkbox" checked onchange="toggleAnim('page',this)"><span class="toggle-slider"></span></label></div>
+    <div style="margin-top:8px">
+      <label style="font-size:0.83rem;color:var(--text-muted);">Transition Speed</label>
+      <select class="select-style" onchange="setTransSpeed(this.value)">
+        <option value="0.15s">Fast (0.15s)</option>
+        <option value="0.22s" selected>Normal (0.22s)</option>
+        <option value="0.4s">Slow (0.4s)</option>
+      </select>
+    </div>
+  </div>
+  <div class="settings-section">
+    <h4>Sidebar Style</h4>
+    <select class="select-style" onchange="setSidebarStyle(this.value)">
+      <option value="default">Default</option>
+      <option value="compact">Compact</option>
+      <option value="wide">Wide</option>
+    </select>
+  </div>
+  <div style="padding:16px 20px;">
+    <button class="btn btn-outline" style="width:100%" onclick="resetSettings()">Reset to Default</button>
+  </div>
+</div>
+
+<!-- ========== APP SHELL ========== -->
+<div id="app">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Ccircle cx='100' cy='100' r='96' fill='%23ffffff' stroke='%231a56a0' stroke-width='6'/%3E%3Ccircle cx='100' cy='100' r='80' fill='none' stroke='%231a56a0' stroke-width='3'/%3E%3Ctext x='100' y='118' text-anchor='middle' font-family='serif' font-size='48' font-weight='bold' fill='%231a56a0'%3E✝%3C/text%3E%3C/svg%3E" alt="SDA">
+      <div class="header-brand-text">
+        <h1>SDA Church CMS</h1>
+        <p>Seventh-day Adventist</p>
+      </div>
+    </div>
+    <button class="header-toggle" onclick="toggleSidebar()" title="Toggle Sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="header-spacer"></div>
+    <div class="header-search">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" placeholder="Search members, offerings...">
+    </div>
+    <div class="header-actions">
+      <button class="header-icon-btn" onclick="toggleSettings()" title="Settings">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button class="header-icon-btn" title="Notifications" onclick="showToast('Notifications','You have 3 pending transfer requests.','info')">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        <span class="notif-badge">3</span>
+      </button>
+      <div class="header-avatar" onclick="toggleAvatarDrop()">
+        AD
+        <div class="avatar-dropdown" id="avatarDrop">
+          <div class="avatar-dropdown-header"><h4>Admin User</h4><p>Administrator</p></div>
+          <a href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> My Profile</a>
+          <a href="#" onclick="navigateTo('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> Settings</a>
+          <hr class="avatar-dropdown-divider">
+          <a href="#" onclick="logout()" style="color:var(--danger)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- BODY -->
+  <div class="app-body">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <!-- Dashboard -->
+      <div class="sidebar-item">
+        <div class="sidebar-link active" onclick="navigateTo('dashboard')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Dashboard</span>
+        </div>
+      </div>
+
+      <div class="sidebar-section">Membership</div>
+
+      <!-- Members -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" id="nav-members" onclick="toggleSubmenu('sub-members','nav-members')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Members</span>
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="sidebar-submenu" id="sub-members">
+          <div class="sidebar-sub-link" onclick="navigateTo('members-all')"><span>All Members</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('members-add')"><span>Add Member</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('members-inactive')"><span>Inactive Members</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('members-search')"><span>Search & Filter</span></div>
+        </div>
+      </div>
+
+      <!-- Transfers -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" id="nav-transfers" onclick="toggleSubmenu('sub-transfers','nav-transfers')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+          <span>Transfers</span>
+          <span class="sidebar-badge">3</span>
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="sidebar-submenu" id="sub-transfers">
+          <div class="sidebar-sub-link" onclick="navigateTo('transfers-pending')"><span>Pending Requests</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('transfers-new')"><span>New Transfer</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('transfers-history')"><span>Transfer History</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">Finance</div>
+
+      <!-- Offerings -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" id="nav-offerings" onclick="toggleSubmenu('sub-offerings','nav-offerings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <span>Offerings & Finance</span>
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="sidebar-submenu" id="sub-offerings">
+          <div class="sidebar-sub-link" onclick="navigateTo('offerings-record')"><span>Record Offering</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('offerings-all')"><span>All Contributions</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('offerings-tithe')"><span>Tithe Records</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('offerings-bulk')"><span>Bulk CSV Upload</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('offerings-receipts')"><span>Receipts</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('offerings-funds')"><span>Fund Allocation</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">Events & Attendance</div>
+
+      <!-- Events -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" id="nav-events" onclick="toggleSubmenu('sub-events','nav-events')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span>Events</span>
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="sidebar-submenu" id="sub-events">
+          <div class="sidebar-sub-link" onclick="navigateTo('events-all')"><span>All Events</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('events-add')"><span>Create Event</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('events-attendance')"><span>Attendance Tracker</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">Reports</div>
+
+      <!-- Reports -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" id="nav-reports" onclick="toggleSubmenu('sub-reports','nav-reports')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Reports</span>
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="sidebar-submenu" id="sub-reports">
+          <div class="sidebar-sub-link" onclick="navigateTo('reports-membership')"><span>Membership Reports</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('reports-finance')"><span>Finance Reports</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('reports-attendance')"><span>Attendance Reports</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('reports-transfers')"><span>Transfer Reports</span></div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">Administration</div>
+
+      <!-- Users -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" id="nav-users" onclick="toggleSubmenu('sub-users','nav-users')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <span>User Management</span>
+          <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+        <div class="sidebar-submenu" id="sub-users">
+          <div class="sidebar-sub-link" onclick="navigateTo('users-all')"><span>All Users</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('users-roles')"><span>Roles & Permissions</span></div>
+          <div class="sidebar-sub-link" onclick="navigateTo('users-audit')"><span>Audit Logs</span></div>
+        </div>
+      </div>
+
+      <!-- Settings -->
+      <div class="sidebar-item">
+        <div class="sidebar-link" onclick="navigateTo('settings')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l-.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>System Settings</span>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-link" onclick="logout()" style="color:rgba(200,214,240,0.6)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          <span>Sign Out</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" id="mainContent">
+
+      <!-- ========== DASHBOARD ========== -->
+      <div class="page active" id="page-dashboard">
+        <div class="breadcrumb">Home <span>/ Dashboard</span></div>
+        <div class="page-header">
+          <div><h2>📊 Dashboard</h2><p>Welcome back, Administrator. Here's your church overview.</p></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-outline" onclick="showToast('Report','Generating monthly report...','info')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Export Report
+            </button>
+            <button class="btn btn-primary-solid" onclick="navigateTo('members-add')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Member
+            </button>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(26,86,160,0.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#1a56a0" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <div>
+              <div class="stat-val">1,284</div>
+              <div class="stat-label">Total Members</div>
+              <div class="stat-change up">↑ 12 this month</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(22,163,74,0.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+            <div>
+              <div class="stat-val">TZS 4.2M</div>
+              <div class="stat-label">Monthly Offerings</div>
+              <div class="stat-change up">↑ 8.4% vs last month</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(217,119,6,0.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+            </div>
+            <div>
+              <div class="stat-val">3</div>
+              <div class="stat-label">Pending Transfers</div>
+              <div class="stat-change down">2 awaiting approval</div>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(8,145,178,0.1)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            </div>
+            <div>
+              <div class="stat-val">87%</div>
+              <div class="stat-label">Avg Attendance</div>
+              <div class="stat-change up">↑ 3% vs last week</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:20px">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-title">Monthly Offerings (2025)</div>
+              <span class="badge badge-success">Live</span>
+            </div>
+            <div class="chart-placeholder">
+              <div class="chart-bar" style="height:55%" title="Jan"></div>
+              <div class="chart-bar" style="height:70%" title="Feb"></div>
+              <div class="chart-bar" style="height:60%" title="Mar"></div>
+              <div class="chart-bar" style="height:85%" title="Apr"></div>
+              <div class="chart-bar" style="height:75%" title="May"></div>
+              <div class="chart-bar" style="height:90%;background:var(--accent)" title="Jun"></div>
+              <div class="chart-bar" style="height:65%" title="Jul"></div>
+              <div class="chart-bar" style="height:80%" title="Aug"></div>
+              <div class="chart-bar" style="height:70%" title="Sep"></div>
+              <div class="chart-bar" style="height:95%" title="Oct"></div>
+              <div class="chart-bar" style="height:88%" title="Nov"></div>
+              <div class="chart-bar" style="height:78%;opacity:0.4" title="Dec"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:0.75rem;color:var(--text-muted)">
+              <span>Jan</span><span>Mar</span><span>May</span><span>Jul</span><span>Sep</span><span>Nov</span>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Membership by Status</div>
+            <div class="donut-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border)" stroke-width="18"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#1a56a0" stroke-width="18" stroke-dasharray="197 86" stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#16a34a" stroke-width="18" stroke-dasharray="48 235" stroke-dashoffset="-197" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#d97706" stroke-width="18" stroke-dasharray="25 258" stroke-dashoffset="-245" transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="45" fill="none" stroke="#dc2626" stroke-width="18" stroke-dasharray="13 270" stroke-dashoffset="-270" transform="rotate(-90 60 60)"/>
+                <text x="60" y="64" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text)" font-family="Nunito Sans">1,284</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="legend-item"><div class="legend-dot" style="background:#1a56a0"></div><span style="font-size:0.82rem"><b>Active</b> — 1,021</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div><span style="font-size:0.82rem"><b>New</b> — 156</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div><span style="font-size:0.82rem"><b>Inactive</b> — 82</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div><span style="font-size:0.82rem"><b>Removed</b> — 25</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="card-title">Recent Members</div>
+              <button class="btn btn-ghost btn-sm" onclick="navigateTo('members-all')">View All →</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Name</th><th>Status</th><th>Joined</th></tr></thead>
+                <tbody>
+                  <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">JM</div>John Mwangi</div></td><td><span class="badge badge-success">Active</span></td><td>Jan 15, 2025</td></tr>
+                  <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">SK</div>Sarah Kioko</div></td><td><span class="badge badge-success">Active</span></td><td>Feb 2, 2025</td></tr>
+                  <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">PM</div>Peter Moshi</div></td><td><span class="badge badge-warning">Probation</span></td><td>Mar 10, 2025</td></tr>
+                  <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">GN</div>Grace Njoroge</div></td><td><span class="badge badge-info">Transfer In</span></td><td>Apr 5, 2025</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+              <div class="card-title">Recent Activity</div>
+              <button class="btn btn-ghost btn-sm">View Log →</button>
+            </div>
+            <div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:rgba(22,163,74,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+                <div><div class="activity-text">New member <b>John Mwangi</b> registered</div><div class="activity-time">2 hours ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:rgba(26,86,160,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a56a0" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                <div><div class="activity-text">Tithe offering of <b>TZS 150,000</b> recorded</div><div class="activity-time">4 hours ago</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:rgba(217,119,6,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+                <div><div class="activity-text">Transfer request for <b>Grace Njoroge</b> submitted</div><div class="activity-time">Yesterday</div></div>
+              </div>
+              <div class="activity-item">
+                <div class="activity-icon" style="background:rgba(220,38,38,0.1)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                <div><div class="activity-text">3 transfers pending review</div><div class="activity-time">2 days ago</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== MEMBERS ALL ========== -->
+      <div class="page" id="page-members-all">
+        <div class="breadcrumb">Home / Members <span>/ All Members</span></div>
+        <div class="page-header">
+          <div><h2>👥 All Members</h2><p>1,284 total members in the database</p></div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="showToast('Export','Members list exported to CSV.','success')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              Export CSV
+            </button>
+            <button class="btn btn-primary-solid" onclick="navigateTo('members-add')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add Member
+            </button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <div style="flex:1;min-width:200px;position:relative">
+              <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input class="form-control" type="text" placeholder="Search by name, ID, phone..." style="padding-left:36px">
+            </div>
+            <select class="form-control" style="width:auto"><option>All Status</option><option>Active</option><option>Inactive</option><option>Transferred In</option><option>Transferred Out</option><option>Removed</option></select>
+            <select class="form-control" style="width:auto"><option>All Classes</option><option>Baptized</option><option>Probation</option><option>Junior</option></select>
+            <select class="form-control" style="width:auto"><option>All Gender</option><option>Male</option><option>Female</option></select>
+          </div>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Member ID</th><th>Name</th><th>Gender</th><th>Phone</th><th>Status</th><th>Baptism Date</th><th>Class</th><th>Actions</th></tr></thead>
+              <tbody id="membersTable">
+                <tr><td>#SDA-0001</td><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">JM</div>John Mwangi</div></td><td>Male</td><td>+255 712 345 678</td><td><span class="badge badge-success">Active</span></td><td>2015-03-21</td><td><span class="badge badge-secondary">Baptized</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openMemberModal()">View</button><button class="btn btn-outline btn-sm">Edit</button></div></td></tr>
+                <tr><td>#SDA-0002</td><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">SK</div>Sarah Kioko</div></td><td>Female</td><td>+255 789 456 123</td><td><span class="badge badge-success">Active</span></td><td>2018-07-14</td><td><span class="badge badge-secondary">Baptized</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openMemberModal()">View</button><button class="btn btn-outline btn-sm">Edit</button></div></td></tr>
+                <tr><td>#SDA-0003</td><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">PM</div>Peter Moshi</div></td><td>Male</td><td>+255 754 321 987</td><td><span class="badge badge-warning">Probation</span></td><td>2024-01-06</td><td><span class="badge badge-warning">Probation</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openMemberModal()">View</button><button class="btn btn-outline btn-sm">Edit</button></div></td></tr>
+                <tr><td>#SDA-0004</td><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">GN</div>Grace Njoroge</div></td><td>Female</td><td>+255 765 890 234</td><td><span class="badge badge-info">Transfer In</span></td><td>2012-11-30</td><td><span class="badge badge-secondary">Baptized</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openMemberModal()">View</button><button class="btn btn-outline btn-sm">Edit</button></div></td></tr>
+                <tr><td>#SDA-0005</td><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">BK</div>Bernard Kamau</div></td><td>Male</td><td>+255 700 111 222</td><td><span class="badge badge-danger">Inactive</span></td><td>2010-05-18</td><td><span class="badge badge-secondary">Baptized</span></td><td><div style="display:flex;gap:6px"><button class="btn btn-ghost btn-sm" onclick="openMemberModal()">View</button><button class="btn btn-outline btn-sm">Edit</button></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-top:1px solid var(--border);font-size:0.85rem;color:var(--text-muted)">
+            <span>Showing 1–5 of 1,284 members</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-ghost btn-sm">← Prev</button>
+              <button class="btn btn-primary-solid btn-sm">1</button>
+              <button class="btn btn-ghost btn-sm">2</button>
+              <button class="btn btn-ghost btn-sm">3</button>
+              <button class="btn btn-ghost btn-sm">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== ADD MEMBER ========== -->
+      <div class="page" id="page-members-add">
+        <div class="breadcrumb">Home / Members <span>/ Add Member</span></div>
+        <div class="page-header"><div><h2>➕ Add New Member</h2><p>Register a new church member</p></div></div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:20px">Personal Information</div>
+          <div class="form-grid">
+            <div class="form-group-app"><label class="form-label-app">First Name *</label><input class="form-control" type="text" placeholder="Enter first name"></div>
+            <div class="form-group-app"><label class="form-label-app">Middle Name</label><input class="form-control" type="text" placeholder="Enter middle name"></div>
+            <div class="form-group-app"><label class="form-label-app">Last Name *</label><input class="form-control" type="text" placeholder="Enter last name"></div>
+            <div class="form-group-app"><label class="form-label-app">Date of Birth *</label><input class="form-control" type="date"></div>
+            <div class="form-group-app"><label class="form-label-app">Gender *</label><select class="form-control"><option>Select Gender</option><option>Male</option><option>Female</option></select></div>
+            <div class="form-group-app"><label class="form-label-app">Marital Status</label><select class="form-control"><option>Single</option><option>Married</option><option>Widowed</option><option>Divorced</option></select></div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+          <div class="card-title" style="margin-bottom:20px">Contact Information</div>
+          <div class="form-grid">
+            <div class="form-group-app"><label class="form-label-app">Phone Number *</label><input class="form-control" type="tel" placeholder="+255 7XX XXX XXX"></div>
+            <div class="form-group-app"><label class="form-label-app">Email Address</label><input class="form-control" type="email" placeholder="member@email.com"></div>
+            <div class="form-group-app" style="grid-column:1/-1"><label class="form-label-app">Residential Address</label><textarea class="form-control" placeholder="Enter full address"></textarea></div>
+          </div>
+          <hr style="border:none;border-top:1px solid var(--border);margin:20px 0">
+          <div class="card-title" style="margin-bottom:20px">Church Information</div>
+          <div class="form-grid">
+            <div class="form-group-app"><label class="form-label-app">Baptism/Profession Date</label><input class="form-control" type="date"></div>
+            <div class="form-group-app"><label class="form-label-app">Membership Class</label><select class="form-control"><option>Baptized</option><option>Probation</option><option>Junior</option></select></div>
+            <div class="form-group-app"><label class="form-label-app">Membership Status</label><select class="form-control"><option>Active</option><option>Inactive</option><option>Probation</option></select></div>
+            <div class="form-group-app"><label class="form-label-app">Department/Ministry</label><select class="form-control"><option>None</option><option>Youth</option><option>Women's Ministry</option><option>Men's Ministry</option><option>Children's Ministry</option><option>Music Ministry</option></select></div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:24px">
+            <button class="btn btn-ghost" onclick="navigateTo('members-all')">Cancel</button>
+            <button class="btn btn-primary-solid" onclick="showToast('Member Added','New member registered successfully!','success');navigateTo('members-all')">Save Member</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== OFFERINGS RECORD ========== -->
+      <div class="page" id="page-offerings-record">
+        <div class="breadcrumb">Home / Finance <span>/ Record Offering</span></div>
+        <div class="page-header"><div><h2>💰 Record Offering</h2><p>Enter new contribution details</p></div></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:20px">Offering Details</div>
+            <div class="form-group-app"><label class="form-label-app">Date *</label><input class="form-control" type="date"></div>
+            <div class="form-group-app"><label class="form-label-app">Member (Optional)</label><input class="form-control" type="text" placeholder="Search member name or ID..."></div>
+            <div class="form-group-app"><label class="form-label-app">Offering Type *</label>
+              <select class="form-control"><option>Tithe</option><option>Church Offering</option><option>Mission Offering</option><option>Special Offering</option><option>Building Fund</option><option>Education Fund</option></select>
+            </div>
+            <div class="form-group-app"><label class="form-label-app">Amount (TZS) *</label><input class="form-control" type="number" placeholder="0.00"></div>
+            <div class="form-group-app"><label class="form-label-app">Payment Method *</label>
+              <select class="form-control"><option>Cash</option><option>Bank Transfer</option><option>Mobile Money (M-Pesa)</option><option>Mobile Money (Tigo Pesa)</option><option>Cheque</option></select>
+            </div>
+            <div class="form-group-app"><label class="form-label-app">Reference / Receipt No.</label><input class="form-control" type="text" placeholder="e.g. TXN-2025-001"></div>
+            <div class="form-group-app"><label class="form-label-app">Fund Allocation *</label>
+              <select class="form-control"><option>Local Church</option><option>Conference</option><option>World Mission</option><option>Adventist Education</option></select>
+            </div>
+            <div class="form-group-app"><label class="form-label-app">Notes</label><textarea class="form-control" placeholder="Optional notes..."></textarea></div>
+            <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px">
+              <button class="btn btn-ghost">Reset</button>
+              <button class="btn btn-accent" onclick="showToast('Receipt','Receipt #RCT-2025-089 generated.','success')">Generate Receipt</button>
+              <button class="btn btn-primary-solid" onclick="showToast('Offering','Offering recorded successfully!','success')">Save Offering</button>
+            </div>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="card-title" style="margin-bottom:14px">Today's Summary</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center"><div style="font-size:1.2rem;font-weight:800;color:var(--primary)">TZS 890K</div><div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Total Today</div></div>
+                <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center"><div style="font-size:1.2rem;font-weight:800;color:var(--success)">24</div><div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px">Entries Today</div></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:14px">Bulk CSV Upload</div>
+              <div style="border:2px dashed var(--border);border-radius:10px;padding:28px;text-align:center;cursor:pointer;transition:var(--hover-anim)" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='var(--border)'">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin:0 auto 10px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                <div style="font-size:0.88rem;color:var(--text-muted)">Drop CSV file here or <span style="color:var(--primary);font-weight:600">browse</span></div>
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px">Max 10MB · CSV format only</div>
+              </div>
+              <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="showToast('Template','CSV template downloaded.','info')">Download Template</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== TRANSFERS PENDING ========== -->
+      <div class="page" id="page-transfers-pending">
+        <div class="breadcrumb">Home / Transfers <span>/ Pending Requests</span></div>
+        <div class="page-header">
+          <div><h2>🔄 Pending Transfers</h2><p>3 transfers awaiting approval</p></div>
+          <button class="btn btn-primary-solid" onclick="navigateTo('transfers-new')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            New Transfer
+          </button>
+        </div>
+        <div class="grid-auto" style="margin-bottom:20px">
+          <div class="card" style="border-left:4px solid var(--warning)">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                  <div class="member-avatar" style="width:40px;height:40px;font-size:0.85rem">GN</div>
+                  <div><div style="font-weight:700;font-size:0.95rem">Grace Njoroge</div><div style="font-size:0.78rem;color:var(--text-muted)">#SDA-0004</div></div>
+                </div>
+                <div style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px">From: <b style="color:var(--text)">Nairobi Central SDA</b></div>
+                <div style="font-size:0.83rem;color:var(--text-muted)">To: <b style="color:var(--text)">Mwanza Central SDA</b></div>
+              </div>
+              <span class="badge badge-warning">Submitted</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+              <span style="font-size:0.78rem;color:var(--text-muted)">Requested: Apr 20, 2025</span>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-success btn-sm" onclick="showToast('Transfer','Transfer approved!','success')">Approve</button>
+                <button class="btn btn-danger btn-sm" onclick="showToast('Transfer','Transfer rejected.','info')">Reject</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="border-left:4px solid var(--warning)">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                  <div class="member-avatar" style="width:40px;height:40px;font-size:0.85rem">BK</div>
+                  <div><div style="font-weight:700;font-size:0.95rem">Bernard Kamau</div><div style="font-size:0.78rem;color:var(--text-muted)">#SDA-0005</div></div>
+                </div>
+                <div style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px">From: <b style="color:var(--text)">Mwanza Central SDA</b></div>
+                <div style="font-size:0.83rem;color:var(--text-muted)">To: <b style="color:var(--text)">Dar es Salaam SDA</b></div>
+              </div>
+              <span class="badge badge-info">Draft</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+              <span style="font-size:0.78rem;color:var(--text-muted)">Requested: May 2, 2025</span>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-success btn-sm" onclick="showToast('Transfer','Transfer approved!','success')">Approve</button>
+                <button class="btn btn-danger btn-sm">Reject</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="border-left:4px solid var(--primary)">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between">
+              <div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                  <div class="member-avatar" style="width:40px;height:40px;font-size:0.85rem">PM</div>
+                  <div><div style="font-weight:700;font-size:0.95rem">Peter Moshi</div><div style="font-size:0.78rem;color:var(--text-muted)">#SDA-0003</div></div>
+                </div>
+                <div style="font-size:0.83rem;color:var(--text-muted);margin-bottom:4px">From: <b style="color:var(--text)">Moshi SDA Church</b></div>
+                <div style="font-size:0.83rem;color:var(--text-muted)">To: <b style="color:var(--text)">Mwanza Central SDA</b></div>
+              </div>
+              <span class="badge badge-success">Approved</span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+              <span style="font-size:0.78rem;color:var(--text-muted)">Requested: May 10, 2025</span>
+              <div style="display:flex;gap:6px">
+                <button class="btn btn-primary-solid btn-sm" onclick="showToast('Transfer','Transfer completed!','success')">Complete</button>
+                <button class="btn btn-ghost btn-sm">View</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Transfer History</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Member</th><th>From</th><th>To</th><th>Date</th><th>Status</th><th>Approved By</th></tr></thead>
+              <tbody>
+                <tr><td>Grace Njoroge</td><td>Nairobi Central</td><td>Mwanza Central</td><td>Apr 20, 2025</td><td><span class="badge badge-success">Completed</span></td><td>Clerk A. Mwita</td></tr>
+                <tr><td>James Otieno</td><td>Kisumu SDA</td><td>Mwanza Central</td><td>Mar 12, 2025</td><td><span class="badge badge-success">Completed</span></td><td>Clerk A. Mwita</td></tr>
+                <tr><td>Amina Hassan</td><td>Mwanza Central</td><td>Zanzibar SDA</td><td>Feb 5, 2025</td><td><span class="badge badge-success">Completed</span></td><td>Pastor M. Sanga</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== REPORTS ========== -->
+      <div class="page" id="page-reports-membership">
+        <div class="breadcrumb">Home / Reports <span>/ Membership Reports</span></div>
+        <div class="page-header">
+          <div><h2>📋 Membership Reports</h2><p>Comprehensive membership analytics</p></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-outline" onclick="showToast('Export','Report exported to PDF.','success')">Export PDF</button>
+            <button class="btn btn-primary-solid" onclick="showToast('Export','Report exported to Excel.','success')">Export Excel</button>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom:16px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end">
+            <div class="form-group-app" style="margin:0"><label class="form-label-app">From Date</label><input class="form-control" type="date" style="width:auto"></div>
+            <div class="form-group-app" style="margin:0"><label class="form-label-app">To Date</label><input class="form-control" type="date" style="width:auto"></div>
+            <div class="form-group-app" style="margin:0"><label class="form-label-app">Report Type</label><select class="form-control" style="width:auto"><option>Active Members</option><option>New Members</option><option>Transfers In/Out</option><option>Demographics</option></select></div>
+            <button class="btn btn-primary-solid">Generate Report</button>
+          </div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(26,86,160,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56a0" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-val">1,021</div><div class="stat-label">Active Members</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(22,163,74,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-val">156</div><div class="stat-label">New This Year</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(8,145,178,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/></svg></div><div><div class="stat-val">43</div><div class="stat-label">Transferred In</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(217,119,6,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div><div><div class="stat-val">29</div><div class="stat-label">Transferred Out</div></div></div>
+        </div>
+        <div class="card">
+          <div class="card-title" style="margin-bottom:14px">Member Report Table</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Member ID</th><th>Name</th><th>DOB</th><th>Gender</th><th>Contact</th><th>Status</th><th>Date Joined</th></tr></thead>
+              <tbody>
+                <tr><td>#SDA-0001</td><td>John Mwangi</td><td>1985-06-12</td><td>Male</td><td>+255 712 345 678</td><td><span class="badge badge-success">Active</span></td><td>2015-03-21</td></tr>
+                <tr><td>#SDA-0002</td><td>Sarah Kioko</td><td>1992-11-30</td><td>Female</td><td>+255 789 456 123</td><td><span class="badge badge-success">Active</span></td><td>2018-07-14</td></tr>
+                <tr><td>#SDA-0003</td><td>Peter Moshi</td><td>2001-04-05</td><td>Male</td><td>+255 754 321 987</td><td><span class="badge badge-warning">Probation</span></td><td>2024-01-06</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== FINANCE REPORT ========== -->
+      <div class="page" id="page-reports-finance">
+        <div class="breadcrumb">Home / Reports <span>/ Finance Reports</span></div>
+        <div class="page-header">
+          <div><h2>💹 Finance Reports</h2><p>Offering and contribution analytics</p></div>
+          <div style="display:flex;gap:10px">
+            <button class="btn btn-outline" onclick="showToast('Export','Finance report exported.','success')">Export PDF</button>
+            <button class="btn btn-primary-solid" onclick="showToast('Export','Excel report ready.','success')">Export Excel</button>
+          </div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:20px">
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(22,163,74,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">TZS 42M</div><div class="stat-label">Total Tithes (YTD)</div><div class="stat-change up">↑ 12% vs last year</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(26,86,160,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#1a56a0" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div><div><div class="stat-val">TZS 18M</div><div class="stat-label">Church Offerings</div><div class="stat-change up">↑ 5% vs last year</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(232,160,32,0.12)"><svg viewBox="0 0 24 24" fill="none" stroke="#e8a020" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div><div><div class="stat-val">TZS 7.5M</div><div class="stat-label">Mission Fund</div></div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(8,145,178,0.1)"><svg viewBox="0 0 24 24" fill="none" stroke="#0891b2" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div><div><div class="stat-val">TZS 67.5M</div><div class="stat-label">Total Contributions</div></div></div>
+        </div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px">Fund Allocation Summary</div>
+            <table style="width:100%;font-size:0.87rem">
+              <thead><tr><th style="padding:8px 0;color:var(--text-muted);font-size:0.77rem">Fund</th><th style="text-align:right;padding:8px 0;color:var(--text-muted);font-size:0.77rem">Amount</th><th style="text-align:right;padding:8px 0;color:var(--text-muted);font-size:0.77rem">%</th></tr></thead>
+              <tbody>
+                <tr><td style="padding:10px 0;border-bottom:1px solid var(--border)">Local Church</td><td style="text-align:right;padding:10px 0;border-bottom:1px solid var(--border);font-weight:700">TZS 28M</td><td style="text-align:right;padding:10px 0;border-bottom:1px solid var(--border)"><span class="badge badge-success">41.5%</span></td></tr>
+                <tr><td style="padding:10px 0;border-bottom:1px solid var(--border)">Conference</td><td style="text-align:right;padding:10px 0;border-bottom:1px solid var(--border);font-weight:700">TZS 22M</td><td style="text-align:right;padding:10px 0;border-bottom:1px solid var(--border)"><span class="badge badge-info">32.6%</span></td></tr>
+                <tr><td style="padding:10px 0;border-bottom:1px solid var(--border)">World Mission</td><td style="text-align:right;padding:10px 0;border-bottom:1px solid var(--border);font-weight:700">TZS 10M</td><td style="text-align:right;padding:10px 0;border-bottom:1px solid var(--border)"><span class="badge badge-warning">14.8%</span></td></tr>
+                <tr><td style="padding:10px 0">Adventist Education</td><td style="text-align:right;padding:10px 0;font-weight:700">TZS 7.5M</td><td style="text-align:right;padding:10px 0"><span class="badge badge-secondary">11.1%</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px">Offering by Type</div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Tithe</span><b>TZS 42M (62%)</b></div><div class="progress"><div class="progress-bar" style="width:62%;background:var(--primary)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Church Offering</span><b>TZS 18M (27%)</b></div><div class="progress"><div class="progress-bar" style="width:27%;background:var(--accent)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Mission Offering</span><b>TZS 5M (7%)</b></div><div class="progress"><div class="progress-bar" style="width:7%;background:var(--success)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:6px"><span>Special</span><b>TZS 2.5M (4%)</b></div><div class="progress"><div class="progress-bar" style="width:4%;background:var(--info)"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== SETTINGS ========== -->
+      <div class="page" id="page-settings">
+        <div class="breadcrumb">Home <span>/ System Settings</span></div>
+        <div class="page-header"><div><h2>⚙️ System Settings</h2><p>Configure church system preferences</p></div></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:16px">Church Information</div>
+            <div class="form-group-app"><label class="form-label-app">Church Name</label><input class="form-control" type="text" value="Mwanza Central SDA Church"></div>
+            <div class="form-group-app"><label class="form-label-app">Conference</label><input class="form-control" type="text" value="Tanzania Lake Union Conference"></div>
+            <div class="form-group-app"><label class="form-label-app">Division</label><input class="form-control" type="text" value="East-Central Africa Division"></div>
+            <div class="form-group-app"><label class="form-label-app">Pastor's Name</label><input class="form-control" type="text" value="Pastor M. Sanga"></div>
+            <div class="form-group-app"><label class="form-label-app">Contact Email</label><input class="form-control" type="email" value="mwanza.central@sdachurch.or.tz"></div>
+            <div class="form-group-app"><label class="form-label-app">Phone</label><input class="form-control" type="tel" value="+255 28 255 0000"></div>
+            <button class="btn btn-primary-solid" onclick="showToast('Settings','Church info saved.','success')">Save Changes</button>
+          </div>
+          <div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="card-title" style="margin-bottom:16px">Notifications</div>
+              <div class="toggle-row"><label style="font-size:0.88rem">Email Notifications</label><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><label style="font-size:0.88rem">SMS Alerts</label><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><label style="font-size:0.88rem">Transfer Alerts</label><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><label style="font-size:0.88rem">New Member Alerts</label><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+            </div>
+            <div class="card" style="margin-bottom:16px">
+              <div class="card-title" style="margin-bottom:16px">Security</div>
+              <div class="toggle-row"><label style="font-size:0.88rem">Two-Factor Auth</label><label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label></div>
+              <div class="toggle-row"><label style="font-size:0.88rem">Audit Logging</label><label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label></div>
+              <div class="form-group-app" style="margin-top:10px"><label class="form-label-app">Session Timeout (minutes)</label><input class="form-control" type="number" value="30"></div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:16px">Backup</div>
+              <div class="form-group-app"><label class="form-label-app">Auto Backup</label><select class="form-control"><option>Daily</option><option>Weekly</option><option>Monthly</option></select></div>
+              <div class="form-group-app"><label class="form-label-app">Retention Period (days)</label><input class="form-control" type="number" value="30"></div>
+              <button class="btn btn-accent" style="width:100%" onclick="showToast('Backup','Manual backup started...','info')">Run Manual Backup Now</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========== USERS ========== -->
+      <div class="page" id="page-users-all">
+        <div class="breadcrumb">Home / Administration <span>/ User Management</span></div>
+        <div class="page-header">
+          <div><h2>👤 User Management</h2><p>Manage system users and roles</p></div>
+          <button class="btn btn-primary-solid" onclick="showToast('Users','New user invite sent.','success')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Invite User
+          </button>
+        </div>
+        <div class="card" style="padding:0">
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>User</th><th>Role</th><th>Last Login</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar">AD</div><div><div style="font-weight:600;font-size:0.9rem">Admin User</div><div style="font-size:0.77rem;color:var(--text-muted)">admin@church.org</div></div></div></td><td><span class="badge badge-info">Administrator</span></td><td>Today, 09:14</td><td><span class="badge badge-success">Active</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar" style="background:rgba(22,163,74,0.12);color:#16a34a">FC</div><div><div style="font-weight:600;font-size:0.9rem">Finance Clerk</div><div style="font-size:0.77rem;color:var(--text-muted)">finance@church.org</div></div></div></td><td><span class="badge badge-success">Finance Clerk</span></td><td>Yesterday, 14:30</td><td><span class="badge badge-success">Active</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar" style="background:rgba(217,119,6,0.12);color:#d97706">MC</div><div><div style="font-weight:600;font-size:0.9rem">Membership Clerk</div><div style="font-size:0.77rem;color:var(--text-muted)">clerk@church.org</div></div></div></td><td><span class="badge badge-warning">Membership Clerk</span></td><td>May 20, 2025</td><td><span class="badge badge-success">Active</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+                <tr><td><div style="display:flex;align-items:center;gap:8px"><div class="member-avatar" style="background:rgba(8,145,178,0.12);color:#0891b2">PS</div><div><div style="font-weight:600;font-size:0.9rem">Pastor Sanga</div><div style="font-size:0.77rem;color:var(--text-muted)">pastor@church.org</div></div></div></td><td><span class="badge badge-secondary">Pastor</span></td><td>May 22, 2025</td><td><span class="badge badge-success">Active</span></td><td><button class="btn btn-ghost btn-sm">Edit</button></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generic empty page for sub-routes -->
+      <div class="page" id="page-generic">
+        <div class="page-header"><div><h2 id="genericTitle">Page</h2><p id="genericSub">This section is under construction.</p></div></div>
+        <div class="card" style="text-align:center;padding:60px">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="1.5" style="margin:0 auto 16px;display:block"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          <div style="font-size:1rem;font-weight:700;color:var(--text);margin-bottom:8px" id="genericMsg">Module coming soon</div>
+          <div style="font-size:0.87rem;color:var(--text-muted)">This module is in development. Check back soon.</div>
+          <button class="btn btn-primary-solid" style="margin:20px auto 0;display:inline-flex" onclick="navigateTo('dashboard')">← Back to Dashboard</button>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer" id="appFooter">
+    SDA Church Management System © 2025 · Seventh-day Adventist Church · v2.0.1 · All rights reserved
+  </footer>
+</div>
+
+<!-- MEMBER DETAIL MODAL -->
+<div class="modal-overlay" id="memberModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header">
+      <div class="modal-title">Member Profile</div>
+      <button class="modal-close" onclick="closeModal('memberModal')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)">
+        <div class="member-avatar" style="width:60px;height:60px;font-size:1.2rem;font-weight:700">JM</div>
+        <div>
+          <div style="font-size:1.1rem;font-weight:800">John Mwangi</div>
+          <div style="font-size:0.83rem;color:var(--text-muted)">#SDA-0001 · Active Member</div>
+          <span class="badge badge-success" style="margin-top:4px">Baptized</span>
+        </div>
+      </div>
+      <div class="form-grid">
+        <div><div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Date of Birth</div><div style="font-size:0.9rem">June 12, 1985</div></div>
+        <div><div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Gender</div><div style="font-size:0.9rem">Male</div></div>
+        <div><div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Phone</div><div style="font-size:0.9rem">+255 712 345 678</div></div>
+        <div><div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Email</div><div style="font-size:0.9rem">john@mail.com</div></div>
+        <div><div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Baptism Date</div><div style="font-size:0.9rem">March 21, 2015</div></div>
+        <div><div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px">Marital Status</div><div style="font-size:0.9rem">Married</div></div>
+      </div>
+      <div style="margin-top:16px">
+        <div style="font-size:0.77rem;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Transfer Timeline</div>
+        <div class="timeline">
+          <div class="timeline-item"><div class="timeline-dot done"></div><div class="timeline-label">Member Registered</div><div class="timeline-sub">March 21, 2015</div></div>
+          <div class="timeline-item"><div class="timeline-dot done"></div><div class="timeline-label">Profile Updated</div><div class="timeline-sub">Jan 10, 2023</div></div>
+          <div class="timeline-item"><div class="timeline-dot"></div><div class="timeline-label">No Transfers on Record</div><div class="timeline-sub">—</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('memberModal')">Close</button>
+      <button class="btn btn-outline">Edit Profile</button>
+      <button class="btn btn-primary-solid">View Contributions</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+let sidebarCollapsed = false;
+let currentPage = 'dashboard';
+
+// ========== SPLASH ==========
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hidden');
+  }, 2800);
+});
+
+// ========== AUTH ==========
+function showAuthPage(id) {
+  document.querySelectorAll('.auth-page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function doLogin() {
+  const u = document.getElementById('login-user')?.value;
+  const p = document.getElementById('login-pass')?.value;
+  const err = document.getElementById('login-error');
+  if (u && p) {
+    err && (err.style.display = 'none');
+    document.getElementById('auth-container').classList.add('hidden');
+    document.getElementById('app').classList.add('visible');
+    showToast('Welcome!', 'Signed in as Administrator.', 'success');
+  } else {
+    err && (err.style.display = 'flex');
+  }
+}
+
+function logout() {
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('auth-container').classList.remove('hidden');
+  showAuthPage('page-login');
+  showToast('Signed Out', 'You have been signed out.', 'info');
+}
+
+function togglePwd(id, btn) {
+  const inp = document.getElementById(id);
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+
+function checkStrength(val) {
+  const segs = [document.getElementById('s1'),document.getElementById('s2'),document.getElementById('s3'),document.getElementById('s4')];
+  const label = document.getElementById('strength-label');
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  segs.forEach((s,i) => {
+    s.className = 'strength-seg';
+    if (i < score) {
+      if (score <= 1) s.classList.add('weak');
+      else if (score <= 2) s.classList.add('fair');
+      else s.classList.add('strong');
+    }
+  });
+  label.textContent = ['Enter a password','Weak — add more variety','Fair — try a number or symbol','Good password','Strong password!'][score];
+}
+
+function showResetStep2() {
+  document.getElementById('reset-step1').style.display = 'none';
+  document.getElementById('reset-step2').style.display = 'block';
+}
+
+function otpNext(el, idx) {
+  const inputs = document.querySelectorAll('.otp-input');
+  if (el.value && idx < 5) inputs[idx + 1].focus();
+}
+
+// ========== NAVIGATION ==========
+const pageMap = {
+  'dashboard':'page-dashboard','members-all':'page-members-all','members-add':'page-members-add',
+  'offerings-record':'page-offerings-record','transfers-pending':'page-transfers-pending',
+  'reports-membership':'page-reports-membership','reports-finance':'page-reports-finance',
+  'settings':'page-settings','users-all':'page-users-all',
+};
+
+function navigateTo(route) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.sidebar-sub-link').forEach(l => l.classList.remove('active'));
+  const pageId = pageMap[route];
+  if (pageId) {
+    document.getElementById(pageId).classList.add('active');
+  } else {
+    const gen = document.getElementById('page-generic');
+    gen.classList.add('active');
+    document.getElementById('genericTitle').textContent = route.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+    document.getElementById('genericSub').textContent = 'Navigate to: ' + route;
+  }
+  currentPage = route;
+  // Close avatar dropdown
+  document.getElementById('avatarDrop').classList.remove('open');
+  // On mobile, close sidebar
+  if (window.innerWidth <= 900) {
+    document.getElementById('sidebar').classList.remove('mobile-open');
+  }
+  window.scrollTo(0,0);
+}
+
+// ========== SIDEBAR ==========
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 900) {
+    sb.classList.toggle('mobile-open');
+  } else {
+    sidebarCollapsed = !sidebarCollapsed;
+    sb.classList.toggle('collapsed', sidebarCollapsed);
+  }
+}
+
+function toggleSubmenu(subId, linkId) {
+  const sub = document.getElementById(subId);
+  const link = document.getElementById(linkId);
+  const isOpen = sub.classList.contains('open');
+  // Close all submenus
+  document.querySelectorAll('.sidebar-submenu').forEach(s => s.classList.remove('open'));
+  document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('open'));
+  if (!isOpen) {
+    sub.classList.add('open');
+    link.classList.add('open');
+  }
+}
+
+// ========== MODALS ==========
+function openMemberModal() { document.getElementById('memberModal').classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.addEventListener('click', e => {
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    if (e.target === m) m.classList.remove('open');
+  });
+});
+
+// ========== AVATAR DROPDOWN ==========
+function toggleAvatarDrop() {
+  document.getElementById('avatarDrop').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const avatar = document.querySelector('.header-avatar');
+  const drop = document.getElementById('avatarDrop');
+  if (avatar && !avatar.contains(e.target)) drop.classList.remove('open');
+});
+
+// ========== SETTINGS PANEL ==========
+function toggleSettings() {
+  document.getElementById('settingsPanel').classList.toggle('open');
+  document.getElementById('settingsOverlay').classList.toggle('open');
+}
+
+function setCSSVar(varName, value) {
+  document.documentElement.style.setProperty(varName, value);
+}
+
+function toggleDark(cb) {
+  document.documentElement.setAttribute('data-theme', cb.checked ? 'dark' : '');
+}
+
+function toggleAnim(type, cb) {
+  if (!cb.checked) {
+    document.documentElement.style.setProperty('--hover-anim', 'none');
+  } else {
+    document.documentElement.style.setProperty('--hover-anim', 'all 0.22s cubic-bezier(.4,0,.2,1)');
+  }
+}
+
+function setTransSpeed(val) {
+  document.documentElement.style.setProperty('--hover-anim', `all ${val} cubic-bezier(.4,0,.2,1)`);
+  document.documentElement.style.setProperty('--transition', `all ${val} cubic-bezier(.4,0,.2,1)`);
+}
+
+function setSidebarStyle(val) {
+  const sb = document.getElementById('sidebar');
+  if (val === 'compact') {
+    document.documentElement.style.setProperty('--sidebar-width','200px');
+  } else if (val === 'wide') {
+    document.documentElement.style.setProperty('--sidebar-width','300px');
+  } else {
+    document.documentElement.style.setProperty('--sidebar-width','270px');
+  }
+}
+
+function resetSettings() {
+  document.documentElement.removeAttribute('data-theme');
+  document.documentElement.style.cssText = '';
+  document.getElementById('darkToggle').checked = false;
+  showToast('Settings', 'Reset to default settings.', 'info');
+}
+
+// ========== TOAST ==========
+let toastCount = 0;
+function showToast(title, msg, type='info') {
+  const c = document.getElementById('toastContainer');
+  const id = 'toast-' + (++toastCount);
+  const colors = {success:'#16a34a',danger:'#dc2626',warning:'#d97706',info:'#1a56a0'};
+  const icons = {
+    success:'<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="'+colors.success+'" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
+    danger:'<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="'+colors.danger+'" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+    warning:'<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="'+colors.warning+'" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg>',
+    info:'<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="'+colors.info+'" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  };
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.id = id;
+  t.style.borderLeft = '3px solid ' + (colors[type]||colors.info);
+  t.innerHTML = (icons[type]||icons.info) + `<div><div class="toast-title">${title}</div><div class="toast-msg">${msg}</div></div>`;
+  c.appendChild(t);
+  setTimeout(() => {
+    t.classList.add('removing');
+    setTimeout(() => t.remove(), 300);
+  }, 3500);
+}
+
+// Login on Enter key
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    const authVis = !document.getElementById('auth-container').classList.contains('hidden');
+    if (authVis) doLogin();
+  }
+});
+</script>
+</body>
+</html>
