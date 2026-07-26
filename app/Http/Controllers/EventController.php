@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\Member;
 use App\Models\Attendance;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 
 class EventController extends Controller
@@ -31,7 +32,9 @@ class EventController extends Controller
             'type' => 'nullable|string',
         ]);
 
-        Event::create($validated);
+        $event = Event::create($validated);
+
+        AuditService::created('Event', $event->id, $validated, 'Event created: ' . $event->title);
 
         return redirect()->route('events.index')->with('success', 'Event created successfully!');
     }
@@ -58,14 +61,21 @@ class EventController extends Controller
             'type' => 'nullable|string',
         ]);
 
+        $oldData = $event->toArray();
         $event->update($validated);
+
+        AuditService::updated('Event', $event->id, $oldData, $validated, 'Event updated: ' . $event->title);
 
         return redirect()->route('events.index')->with('success', 'Event updated successfully!');
     }
 
     public function destroy(Event $event)
     {
+        $oldData = $event->toArray();
         $event->delete();
+
+        AuditService::deleted('Event', $event->id, $oldData, 'Event deleted: ' . $oldData['title']);
+
         return redirect()->route('events.index')->with('success', 'Event deleted successfully!');
     }
 

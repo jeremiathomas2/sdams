@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transfer;
 use App\Models\Member;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 
 class TransferController extends Controller
@@ -31,7 +32,9 @@ class TransferController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        Transfer::create($validated);
+        $transfer = Transfer::create($validated);
+
+        AuditService::created('Transfer', $transfer->id, $validated, 'Transfer created: ' . $validated['type'] . ' from ' . $validated['from_church']);
 
         return redirect()->route('transfers.index')->with('success', 'Transfer request created successfully!');
     }
@@ -55,7 +58,10 @@ class TransferController extends Controller
             'notes' => 'nullable|string',
         ]);
 
+        $oldData = $transfer->toArray();
         $transfer->update($validated);
+
+        AuditService::updated('Transfer', $transfer->id, $oldData, $validated, 'Transfer status changed to: ' . $validated['status']);
 
         if ($validated['status'] == 'Approved') {
             $member = $transfer->member;
@@ -71,7 +77,11 @@ class TransferController extends Controller
 
     public function destroy(Transfer $transfer)
     {
+        $oldData = $transfer->toArray();
         $transfer->delete();
+
+        AuditService::deleted('Transfer', $transfer->id, $oldData, 'Transfer deleted: ' . $oldData['type'] . ' from ' . $oldData['from_church']);
+
         return redirect()->route('transfers.index')->with('success', 'Transfer request deleted successfully!');
     }
 

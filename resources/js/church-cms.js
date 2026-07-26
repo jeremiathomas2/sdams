@@ -2,6 +2,119 @@
 let sidebarCollapsed = false;
 let currentPage = 'dashboard';
 
+const uiSettingsStorageKey = 'churchms:uiSettings';
+
+function readUiSettings() {
+  try {
+    const raw = localStorage.getItem(uiSettingsStorageKey);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeUiSettings(next) {
+  try {
+    localStorage.setItem(uiSettingsStorageKey, JSON.stringify(next));
+  } catch {}
+}
+
+function setUiSetting(path, value) {
+  const current = readUiSettings();
+  const next = { ...current };
+  if (path === 'darkMode') {
+    next.darkMode = !!value;
+  } else if (path === 'cssVars') {
+    next.cssVars = value && typeof value === 'object' ? value : {};
+  } else if (path.startsWith('cssVars.')) {
+    const varName = path.slice('cssVars.'.length);
+    next.cssVars = { ...(current.cssVars || {}), [varName]: value };
+  } else {
+    next[path] = value;
+  }
+  writeUiSettings(next);
+  return next;
+}
+
+function applyHoverAnimEnabled(enabled) {
+  if (!enabled) {
+    document.documentElement.style.setProperty('--hover-anim', 'none');
+  } else {
+    const settings = readUiSettings();
+    const savedSpeed = settings && typeof settings.transSpeed === 'string' ? settings.transSpeed : null;
+    const speed = savedSpeed || '0.22s';
+    document.documentElement.style.setProperty('--hover-anim', `all ${speed} cubic-bezier(.4,0,.2,1)`);
+  }
+}
+
+function applyDarkMode(enabled) {
+  document.documentElement.setAttribute('data-theme', enabled ? 'dark' : '');
+}
+
+function applyCssVars(cssVars) {
+  if (!cssVars || typeof cssVars !== 'object') return;
+  Object.entries(cssVars).forEach(([k, v]) => {
+    if (typeof k === 'string' && typeof v === 'string') {
+      document.documentElement.style.setProperty(k, v);
+    }
+  });
+}
+
+function syncSettingsPanelControls(settings) {
+  const panel = document.getElementById('settingsPanel');
+  if (!panel) return;
+
+  const darkToggle = document.getElementById('darkToggle');
+  if (darkToggle) darkToggle.checked = !!settings.darkMode;
+
+  const cssVars = settings.cssVars && typeof settings.cssVars === 'object' ? settings.cssVars : {};
+  panel.querySelectorAll('input[type="color"]').forEach(input => {
+    const onchange = input.getAttribute('onchange') || '';
+    const match = onchange.match(/setCSSVar\('([^']+)'\s*,/);
+    if (!match) return;
+    const varName = match[1];
+    const saved = cssVars[varName];
+    if (typeof saved === 'string') input.value = saved;
+  });
+
+  const speedSelect = panel.querySelector('select.select-style[onchange*="setTransSpeed"]');
+  if (speedSelect && typeof settings.transSpeed === 'string') speedSelect.value = settings.transSpeed;
+
+  const sidebarSelect = panel.querySelector('select.select-style[onchange*="setSidebarStyle"]');
+  if (sidebarSelect && typeof settings.sidebarStyle === 'string') sidebarSelect.value = settings.sidebarStyle;
+
+  panel.querySelectorAll('input[type="checkbox"][onchange*="toggleAnim"]').forEach(input => {
+    const onchange = input.getAttribute('onchange') || '';
+    const match = onchange.match(/toggleAnim\('([^']+)'\s*,/);
+    if (!match) return;
+    const type = match[1];
+    if (type === 'hover' && typeof settings.hoverAnimEnabled === 'boolean') input.checked = settings.hoverAnimEnabled;
+    if (type === 'page' && typeof settings.pageAnimEnabled === 'boolean') input.checked = settings.pageAnimEnabled;
+  });
+}
+
+(() => {
+  const settings = readUiSettings();
+  if (typeof settings.darkMode === 'boolean') applyDarkMode(settings.darkMode);
+  applyCssVars(settings.cssVars);
+  if (typeof settings.transSpeed === 'string') {
+    document.documentElement.style.setProperty('--hover-anim', `all ${settings.transSpeed} cubic-bezier(.4,0,.2,1)`);
+    document.documentElement.style.setProperty('--transition', `all ${settings.transSpeed} cubic-bezier(.4,0,.2,1)`);
+  }
+  if (typeof settings.sidebarStyle === 'string') {
+    if (settings.sidebarStyle === 'compact') {
+      document.documentElement.style.setProperty('--sidebar-width','200px');
+    } else if (settings.sidebarStyle === 'wide') {
+      document.documentElement.style.setProperty('--sidebar-width','300px');
+    } else {
+      document.documentElement.style.setProperty('--sidebar-width','270px');
+    }
+  }
+  if (typeof settings.hoverAnimEnabled === 'boolean') applyHoverAnimEnabled(settings.hoverAnimEnabled);
+})();
+
 // ========== SPLASH ==========
 window.addEventListener('load', () => {
     const splash = document.getElementById('splash');
@@ -213,23 +326,31 @@ window.toggleSettings = function() {
 
 window.setCSSVar = function(varName, value) {
   document.documentElement.style.setProperty(varName, value);
+  setUiSetting(`cssVars.${varName}`, value);
 }
 
 window.toggleDark = function(cb) {
-  document.documentElement.setAttribute('data-theme', cb.checked ? 'dark' : '');
+  const enabled = !!cb.checked;
+  applyDarkMode(enabled);
+  setUiSetting('darkMode', enabled);
 }
 
 window.toggleAnim = function(type, cb) {
-  if (!cb.checked) {
-    document.documentElement.style.setProperty('--hover-anim', 'none');
+  const enabled = !!cb.checked;
+  if (type === 'page') {
+    setUiSetting('pageAnimEnabled', enabled);
   } else {
-    document.documentElement.style.setProperty('--hover-anim', 'all 0.22s cubic-bezier(.4,0,.2,1)');
+    setUiSetting('hoverAnimEnabled', enabled);
   }
+  applyHoverAnimEnabled(enabled);
 }
 
 window.setTransSpeed = function(val) {
   document.documentElement.style.setProperty('--hover-anim', `all ${val} cubic-bezier(.4,0,.2,1)`);
   document.documentElement.style.setProperty('--transition', `all ${val} cubic-bezier(.4,0,.2,1)`);
+  setUiSetting('transSpeed', val);
+  setUiSetting('cssVars.--hover-anim', `all ${val} cubic-bezier(.4,0,.2,1)`);
+  setUiSetting('cssVars.--transition', `all ${val} cubic-bezier(.4,0,.2,1)`);
 }
 
 window.setSidebarStyle = function(val) {
@@ -240,6 +361,8 @@ window.setSidebarStyle = function(val) {
   } else {
     document.documentElement.style.setProperty('--sidebar-width','270px');
   }
+  setUiSetting('sidebarStyle', val);
+  setUiSetting('cssVars.--sidebar-width', getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width').trim());
 }
 
 window.resetSettings = function() {
@@ -247,8 +370,25 @@ window.resetSettings = function() {
   document.documentElement.style.cssText = '';
   const darkToggle = document.getElementById('darkToggle');
   if (darkToggle) darkToggle.checked = false;
+  try { localStorage.removeItem(uiSettingsStorageKey); } catch {}
+  const panel = document.getElementById('settingsPanel');
+  if (panel) {
+    panel.querySelectorAll('input[type="color"]').forEach(input => {
+      input.value = input.defaultValue;
+    });
+    panel.querySelectorAll('select.select-style').forEach(select => {
+      select.value = select.querySelector('option[selected]')?.value ?? select.options[0]?.value ?? select.value;
+    });
+    panel.querySelectorAll('input[type="checkbox"][onchange*="toggleAnim"]').forEach(input => {
+      input.checked = input.defaultChecked;
+    });
+  }
   showToast('Settings', 'Reset to default settings.', 'info');
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  syncSettingsPanelControls(readUiSettings());
+});
 
 // ========== TOAST ==========
 let toastCount = 0;

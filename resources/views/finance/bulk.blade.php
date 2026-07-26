@@ -15,15 +15,15 @@
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         </div>
         <h3 class="card-title">Select CSV File</h3>
-        <p class="card-sub" style="margin-bottom:24px">Download the <a href="#" style="color:var(--primary);font-weight:600">CSV Template</a> to ensure your data is formatted correctly before uploading.</p>
-        
-        <form action="#" method="POST" enctype="multipart/form-data">
+        <p class="card-sub" style="margin-bottom:24px">Upload a CSV with columns: Member Name, Amount, Type, Date</p>
+
+        <form action="{{ route('offerings.bulkStore') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div style="border:2px dashed var(--border);border-radius:12px;padding:40px;margin-bottom:24px;cursor:pointer;" onclick="document.getElementById('csv_file').click()">
-                <input type="file" id="csv_file" name="csv_file" style="display:none" accept=".csv">
-                <p style="color:var(--text-muted)">Click to browse or drag and drop your CSV file here</p>
+                <input type="file" id="csv_file" name="csv_file" style="display:none" accept=".csv,.txt" required onchange="document.getElementById('file-label').textContent = this.files[0].name">
+                <p style="color:var(--text-muted)" id="file-label">Click to browse or drag and drop your CSV file here</p>
             </div>
-            <button type="button" class="btn btn-primary-solid" style="width:100%" onclick="showToast('Upload','Bulk upload functionality coming soon...','info')">Upload and Process</button>
+            <button type="submit" class="btn btn-primary-solid" style="width:100%">Upload and Process</button>
         </form>
     </div>
 </div>

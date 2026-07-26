@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Member;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 
 class MemberController extends Controller
@@ -37,7 +38,9 @@ class MemberController extends Controller
 
         $validated['member_id'] = 'SDA-' . rand(1000, 9999);
 
-        Member::create($validated);
+        $member = Member::create($validated);
+
+        AuditService::created('Member', $member->id, $validated, 'Member added: ' . $member->first_name . ' ' . $member->last_name);
 
         return redirect()->route('members.index')->with('success', 'Member added successfully!');
     }
@@ -69,14 +72,21 @@ class MemberController extends Controller
             'department_ministry' => 'nullable|string',
         ]);
 
+        $oldData = $member->toArray();
         $member->update($validated);
+
+        AuditService::updated('Member', $member->id, $oldData, $validated, 'Member updated: ' . $member->first_name . ' ' . $member->last_name);
 
         return redirect()->route('members.index')->with('success', 'Member updated successfully!');
     }
 
     public function destroy(Member $member)
     {
+        $oldData = $member->toArray();
         $member->delete();
+
+        AuditService::deleted('Member', $member->id, $oldData, 'Member deleted: ' . $oldData['first_name'] . ' ' . $oldData['last_name']);
+
         return redirect()->route('members.index')->with('success', 'Member deleted successfully!');
     }
 
@@ -105,5 +115,42 @@ class MemberController extends Controller
             ->paginate(10);
 
         return view('members.index', compact('members'));
+    }
+
+    public function export()
+    {
+        $members = Member::all();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="members_' . date('Y-m-d') . '.csv"',
+        ];
+
+        $callback = function () use ($members) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Member ID', 'First Name', 'Middle Name', 'Last Name', 'DOB', 'Gender', 'Phone', 'Email', 'Address', 'Baptism Date', 'Class', 'Status', 'Department']);
+
+            foreach ($members as $member) {
+                fputcsv($file, [
+                    $member->member_id,
+                    $member->first_name,
+                    $member->middle_name ?? '',
+                    $member->last_name,
+                    $member->date_of_birth,
+                    $member->gender,
+                    $member->phone_number,
+                    $member->email ?? '',
+                    $member->residential_address ?? '',
+                    $member->baptism_date ?? '',
+                    $member->membership_class,
+                    $member->membership_status,
+                    $member->department_ministry ?? '',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

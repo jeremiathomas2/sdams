@@ -1,4 +1,5 @@
 <aside class="sidebar" id="sidebar">
+      <div class="sidebar-menu">
       <!-- Dashboard -->
       <div class="sidebar-item">
         <a href="{{ route('dashboard') }}" class="sidebar-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
@@ -7,6 +8,16 @@
         </a>
       </div>
 
+      @php
+        $userRole = auth()->user()->role ?? '';
+        $canManageMembers = in_array($userRole, ['Administrator', 'Pastor', 'Membership Clerk']);
+        $canManageFinance = in_array($userRole, ['Administrator', 'Finance Clerk']);
+        $canManageTransfers = in_array($userRole, ['Administrator', 'Pastor', 'Membership Clerk']);
+        $canViewReports = in_array($userRole, ['Administrator', 'Pastor']);
+        $canManageUsers = $userRole === 'Administrator';
+      @endphp
+
+      @if($canManageMembers)
       <div class="sidebar-section">Membership</div>
 
       <!-- Members -->
@@ -24,6 +35,7 @@
         </div>
       </div>
 
+      @if($canManageTransfers)
       <!-- Transfers -->
       <div class="sidebar-item">
         <div class="sidebar-link {{ request()->routeIs('transfers.*') ? 'active' : '' }}" id="nav-transfers" onclick="toggleSubmenu('sub-transfers','nav-transfers')">
@@ -37,7 +49,10 @@
           <a href="{{ route('transfers.history') }}" class="sidebar-sub-link {{ request()->routeIs('transfers.history') ? 'active' : '' }}"><span>Transfer History</span></a>
         </div>
       </div>
+      @endif
+      @endif
 
+      @if($canManageFinance)
       <div class="sidebar-section">Finance</div>
 
       <!-- Offerings -->
@@ -56,6 +71,7 @@
           <a href="{{ route('offerings.funds') }}" class="sidebar-sub-link {{ request()->routeIs('offerings.funds') ? 'active' : '' }}"><span>Fund Allocation</span></a>
         </div>
       </div>
+      @endif
 
       <div class="sidebar-section">Events & Attendance</div>
 
@@ -73,6 +89,7 @@
         </div>
       </div>
 
+      @if($canViewReports)
       <div class="sidebar-section">Reports</div>
 
       <!-- Reports -->
@@ -89,7 +106,9 @@
           <a href="{{ route('reports.transfers') }}" class="sidebar-sub-link {{ request()->routeIs('reports.transfers') ? 'active' : '' }}"><span>Transfer Reports</span></a>
         </div>
       </div>
+      @endif
 
+      @if($canManageUsers)
       <div class="sidebar-section">Administration</div>
 
       <!-- Users -->
@@ -113,7 +132,9 @@
           <span>System Settings</span>
         </a>
       </div>
+      @endif
 
+      </div>
       <div class="sidebar-footer">
         <form method="POST" action="{{ route('logout') }}" id="sidebar-logout-form">
           @csrf

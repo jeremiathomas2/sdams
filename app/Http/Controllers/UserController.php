@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Response;
 
 class UserController extends Controller
 {
@@ -86,8 +89,81 @@ class UserController extends Controller
         return view('users.roles');
     }
 
-    public function audit()
+    public function audit(Request $request)
     {
-        return view('users.audit');
+        $filters = $request->only(['action', 'model', 'user_id', 'date_from', 'date_to', 'search']);
+        $filters = array_filter($filters);
+
+        $hasFilters = !empty($filters);
+
+        $filteredQuery = AuditLog::with('user')->filter($filters);
+        $logs = (clone $filteredQuery)->latest()->paginate(20)->withQueryString();
+
+        $baseQuery = $hasFilters ? (clone $filteredQuery) : AuditLog::query();
+
+        $stats = [
+            'total' => (clone $baseQuery)->count(),
+            'today' => (clone $baseQuery)->whereDate('created_at', today())->count(),
+            'this_week' => (clone $baseQuery)->whereDate('created_at', '>=', now()->subWeek())->count(),
+            'unique_users' => (clone $baseQuery)->whereNotNull('user_id')->count(DB::raw('DISTINCT user_id')),
+        ];
+
+        $actionCounts = (clone $baseQuery)
+            ->selectRaw('action, count(*) as count')
+            ->groupBy('action')
+            ->pluck('count', 'action')
+            ->toArray();
+
+        $modelCounts = (clone $baseQuery)
+            ->selectRaw('model, count(*) as count')
+            ->groupBy('model')
+            ->orderByDesc('count')
+            ->pluck('count', 'model')
+            ->toArray();
+
+        $allUsers = User::orderBy('name')->pluck('name', 'id');
+        $allModels = (clone ($hasFilters ? AuditLog::query() : AuditLog::query()))
+            ->distinct()
+            ->pluck('model')
+            ->filter()
+            ->values();
+
+        return view('users.audit', compact(
+            'logs', 'stats', 'actionCounts', 'modelCounts',
+            'allUsers', 'allModels', 'filters', 'hasFilters'
+        ));
+    }
+
+    public function auditExport(Request $request)
+    {
+        $filters = $request->only(['action', 'model', 'user_id', 'date_from', 'date_to', 'search']);
+        $filters = array_filter($filters);
+
+        $logs = AuditLog::with('user')->filter($filters)->latest()->get();
+
+        $callback = function () use ($logs) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Timestamp', 'User', 'Action', 'Model', 'Model ID', 'IP Address', 'Description', 'Changes']);
+
+            foreach ($logs as $log) {
+                fputcsv($file, [
+                    $log->created_at->format('Y-m-d H:i:s'),
+                    $log->user->name ?? 'System',
+                    $log->action,
+                    $log->model,
+                    $log->model_id ?? '',
+                    $log->ip_address ?? '',
+                    $log->description ?? '',
+                    $log->diff_text,
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return Response::stream($callback, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="audit-logs-' . now()->format('Y-m-d') . '.csv"',
+        ]);
     }
 }

@@ -28,8 +28,8 @@ class MemberFactory extends Factory
             'email' => $this->faker->unique()->safeEmail(),
             'residential_address' => $this->faker->address(),
             'baptism_date' => $this->faker->date('Y-m-d', '-1 year'),
-            'membership_class' => $this->faker->randomElement(['Baptized', 'Probation', 'Junior']),
-            'membership_status' => $this->faker->randomElement(['Active', 'Inactive', 'Probation']),
+            'membership_class' => $this->faker->randomElement(['Baptized', 'Non-Baptized', 'Associate']),
+            'membership_status' => $this->faker->randomElement(['Active', 'Inactive', 'Probation', 'Transferred']),
             'department_ministry' => $this->faker->randomElement(['Youth', 'Women\'s Ministry', 'Men\'s Ministry', 'Children\'s Ministry', 'Music Ministry', 'None']),
         ];
     }
