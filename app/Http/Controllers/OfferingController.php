@@ -11,10 +11,9 @@ use Illuminate\Http\Response;
 
 class OfferingController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $offerings = Offering::with('member', 'fund')->latest()->paginate(10);
-        return view('finance.index', compact('offerings'));
+        return view('finance.index', $this->filteredListings($request));
     }
 
     public function create()
@@ -103,10 +102,9 @@ class OfferingController extends Controller
         return redirect()->route('offerings.index')->with('success', 'Offering deleted successfully!');
     }
 
-    public function tithe()
+    public function tithe(Request $request)
     {
-        $offerings = Offering::where('type', 'Tithe')->with('member')->latest()->paginate(10);
-        return view('finance.index', compact('offerings'));
+        return view('finance.index', $this->filteredListings($request, fn ($q) => $q->where('type', 'Tithe')));
     }
 
     public function funds()
@@ -152,10 +150,9 @@ class OfferingController extends Controller
         return redirect()->route('offerings.funds')->with('success', 'Fund deleted successfully!');
     }
 
-    public function receipts()
+    public function receipts(Request $request)
     {
-        $offerings = Offering::whereNotNull('receipt_number')->with('member')->latest()->paginate(10);
-        return view('finance.index', compact('offerings'));
+        return view('finance.index', $this->filteredListings($request, fn ($q) => $q->whereNotNull('receipt_number')));
     }
 
     public function bulk()
@@ -229,9 +226,9 @@ class OfferingController extends Controller
         return redirect()->route('offerings.index')->with('success', $message);
     }
 
-    public function export()
+    public function export(Request $request)
     {
-        $offerings = Offering::with('member')->latest()->get();
+        $offerings = $this->filteredQuery($request)->latest()->get();
 
         $headers = [
             'Content-Type' => 'text/csv',
@@ -258,5 +255,67 @@ class OfferingController extends Controller
         };
 
         return response()->stream($callback, 200, $headers);
+    }
+
+    private function filteredQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        return Offering::query()
+            ->with('member', 'fund')
+            ->when($request->filled('q'), function ($query) use ($request) {
+                $q = trim($request->input('q'));
+
+                $query->where(function ($query) use ($q) {
+                    $query->where('receipt_number', 'like', "%{$q}%")
+                        ->orWhere('notes', 'like', "%{$q}%")
+                        ->orWhereHas('member', function ($query) use ($q) {
+                            $query->where('first_name', 'like', "%{$q}%")
+                                ->orWhere('last_name', 'like', "%{$q}%")
+                                ->orWhere('member_id', 'like', "%{$q}%");
+                        });
+                });
+            })
+            ->when($request->filled('type'), fn ($query) => $query->where('type', $request->input('type')))
+            ->when($request->filled('fund'), fn ($query) => $query->where('fund_id', $request->input('fund')))
+            ->when(
+                $request->filled('date_from') && strtotime((string) $request->input('date_from')) !== false,
+                fn ($query) => $query->whereDate('date', '>=', $request->input('date_from'))
+            )
+            ->when(
+                $request->filled('date_to') && strtotime((string) $request->input('date_to')) !== false,
+                fn ($query) => $query->whereDate('date', '<=', $request->input('date_to'))
+            )
+            ->when(
+                $request->filled('amount_min') && is_numeric($request->input('amount_min')),
+                fn ($query) => $query->where('amount', '>=', $request->input('amount_min'))
+            )
+            ->when(
+                $request->filled('amount_max') && is_numeric($request->input('amount_max')),
+                fn ($query) => $query->where('amount', '<=', $request->input('amount_max'))
+            )
+            ->when($request->filled('has_receipt'), function ($query) use ($request) {
+                $request->boolean('has_receipt')
+                    ? $query->whereNotNull('receipt_number')
+                    : $query->whereNull('receipt_number');
+            });
+    }
+
+    private function filteredListings(Request $request, ?callable $scope = null): array
+    {
+        $query = $this->filteredQuery($request);
+
+        if ($scope) {
+            $scope($query);
+        }
+
+        $summary = (clone $query)
+            ->selectRaw('COUNT(*) as count, COALESCE(SUM(amount), 0) as total')
+            ->first();
+
+        $offerings = $query->latest()->paginate(10)->withQueryString();
+
+        return compact('offerings', 'summary') + [
+            'types' => Offering::query()->distinct()->orderBy('type')->pluck('type'),
+            'funds' => Fund::orderBy('name')->get(),
+        ];
     }
 }

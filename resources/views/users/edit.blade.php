@@ -40,11 +40,9 @@
                 <label class="form-label-app">Role</label>
                 <select name="role" class="form-control" required>
                     @php($roleValue = old('role', $user->role))
-                    <option value="Administrator" {{ $roleValue == 'Administrator' ? 'selected' : '' }}>Administrator</option>
-                    <option value="Pastor" {{ $roleValue == 'Pastor' ? 'selected' : '' }}>Pastor</option>
-                    <option value="Finance Clerk" {{ $roleValue == 'Finance Clerk' ? 'selected' : '' }}>Finance Clerk</option>
-                    <option value="Membership Clerk" {{ $roleValue == 'Membership Clerk' ? 'selected' : '' }}>Membership Clerk</option>
-                    <option value="Member" {{ $roleValue == 'Member' ? 'selected' : '' }}>Member</option>
+                    @foreach($roles as $role)
+                    <option value="{{ $role->name }}" {{ $roleValue == $role->name ? 'selected' : '' }}>{{ $role->display_name }}</option>
+                    @endforeach
                 </select>
             </div>
             <div class="form-group-app">

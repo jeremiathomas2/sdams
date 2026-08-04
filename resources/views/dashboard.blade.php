@@ -85,7 +85,7 @@
                     $height = $maxOffering > 0 ? round(($amount / $maxOffering) * 100) : 0;
                     $isCurrentMonth = $i == now()->month;
                 @endphp
-                <div class="chart-bar" style="height:{{ max($height, 2) }}%;{{ $isCurrentMonth ? 'background:var(--accent)' : '' }}" title="{{ $monthLabels[$i-1] }}: TZS {{ number_format($amount) }}"></div>
+                <div class="chart-bar" style="--i: {{ $i - 1 }};height:{{ max($height, 2) }}%;{{ $isCurrentMonth ? 'background:var(--accent)' : '' }}" title="{{ $monthLabels[$i-1] }}: TZS {{ number_format($amount) }}"></div>
             @endfor
         </div>
         <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:0.75rem;color:var(--text-muted)">
@@ -95,49 +95,42 @@
     <div class="card">
         <div class="card-title" style="margin-bottom:16px">Membership by Status</div>
         @php
-            $active = $statusCounts['Active'] ?? 0;
-            $inactive = $statusCounts['Inactive'] ?? 0;
-            $probation = $statusCounts['Probation'] ?? 0;
-            $transferred = $statusCounts['Transferred'] ?? 0;
-            $total = max($active + $inactive + $probation + $transferred, 1);
+            $statusColors = [
+                'Active' => '#1a56a0',
+                'Probation' => '#16a34a',
+                'Inactive' => '#d97706',
+                'Transferred' => '#dc2626',
+            ];
+            $palette = ['#7c3aed', '#0891b2', '#db2777', '#65a30d', '#f59e0b', '#64748b'];
+            $segments = [];
+            $running = 0;
+            foreach ($statusCounts as $status => $count) {
+                $color = $statusColors[$status] ?? $palette[count($segments) % count($palette)];
+                $segments[] = ['status' => $status, 'count' => $count, 'color' => $color, 'start' => $running];
+                $running += $count;
+            }
+            $total = max($running, 1);
             $circumference = 2 * 3.14159265358979 * 45;
         @endphp
         <div class="donut-wrap">
             <svg width="120" height="120" viewBox="0 0 120 120">
                 <circle cx="60" cy="60" r="45" fill="none" stroke="var(--border)" stroke-width="18"/>
-                @if($active > 0)
-                <circle cx="60" cy="60" r="45" fill="none" stroke="#1a56a0" stroke-width="18"
-                    stroke-dasharray="{{ ($active/$total) * $circumference }} {{ $circumference }}"
-                    stroke-dashoffset="0" transform="rotate(-90 60 60)"/>
+                @foreach($segments as $seg)
+                @if($seg['count'] > 0)
+                @php($len = ($seg['count'] / $total) * $circumference)
+                <circle class="donut-segment" cx="60" cy="60" r="45" fill="none" stroke="{{ $seg['color'] }}" stroke-width="18"
+                    style="--i: {{ $loop->index }}; --len: {{ $len }}; --gap: {{ $circumference - $len }}; --circ: {{ $circumference }}; --offset: -{{ ($seg['start'] / $total) * $circumference }}; stroke-dasharray: var(--len) var(--gap); stroke-dashoffset: var(--offset);"
+                    transform="rotate(-90 60 60)"/>
                 @endif
-                @if($inactive > 0)
-                <circle cx="60" cy="60" r="45" fill="none" stroke="#d97706" stroke-width="18"
-                    stroke-dasharray="{{ ($inactive/$total) * $circumference }} {{ $circumference }}"
-                    stroke-dashoffset="-{{ ($active/$total) * $circumference }}" transform="rotate(-90 60 60)"/>
-                @endif
-                @if($probation > 0)
-                <circle cx="60" cy="60" r="45" fill="none" stroke="#16a34a" stroke-width="18"
-                    stroke-dasharray="{{ ($probation/$total) * $circumference }} {{ $circumference }}"
-                    stroke-dashoffset="-{{ (($active + $inactive)/$total) * $circumference }}" transform="rotate(-90 60 60)"/>
-                @endif
-                @if($transferred > 0)
-                <circle cx="60" cy="60" r="45" fill="none" stroke="#dc2626" stroke-width="18"
-                    stroke-dasharray="{{ ($transferred/$total) * $circumference }} {{ $circumference }}"
-                    stroke-dashoffset="-{{ (($active + $inactive + $probation)/$total) * $circumference }}" transform="rotate(-90 60 60)"/>
-                @endif
-                <text x="60" y="64" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text)" font-family="Nunito Sans">{{ number_format($totalMembers) }}</text>
+                @endforeach
+                <text x="60" y="64" text-anchor="middle" font-size="14" font-weight="700" fill="var(--text)" font-family="Nunito Sans">{{ number_format($running) }}</text>
             </svg>
             <div class="donut-legend">
-                <div class="legend-item"><div class="legend-dot" style="background:#1a56a0"></div><span style="font-size:0.82rem"><b>Active</b> — {{ number_format($active) }}</span></div>
-                @if($probation > 0)
-                <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div><span style="font-size:0.82rem"><b>Probation</b> — {{ number_format($probation) }}</span></div>
+                @foreach($segments as $seg)
+                @if($seg['count'] > 0)
+                <div class="legend-item"><div class="legend-dot" style="background:{{ $seg['color'] }}"></div><span style="font-size:0.82rem"><b>{{ $seg['status'] ?: 'Unspecified' }}</b> — {{ number_format($seg['count']) }}</span></div>
                 @endif
-                @if($inactive > 0)
-                <div class="legend-item"><div class="legend-dot" style="background:#d97706"></div><span style="font-size:0.82rem"><b>Inactive</b> — {{ number_format($inactive) }}</span></div>
-                @endif
-                @if($transferred > 0)
-                <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div><span style="font-size:0.82rem"><b>Transferred</b> — {{ number_format($transferred) }}</span></div>
-                @endif
+                @endforeach
             </div>
         </div>
     </div>

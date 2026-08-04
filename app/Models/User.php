@@ -23,6 +23,42 @@ class User extends Authenticatable
         return $this->belongsTo(Member::class);
     }
 
+    public function roleModel(): ?Role
+    {
+        return Role::where('name', $this->role)->first();
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        if ($this->role === 'Administrator') {
+            return true;
+        }
+
+        $role = $this->roleModel();
+
+        if ($role) {
+            return $role->permissions->contains('name', $permission);
+        }
+
+        return in_array($permission, config('roles.defaults.' . $this->role, []), true);
+    }
+
+    public function hasAnyPermission(array $permissions): bool
+    {
+        foreach ($permissions as $permission) {
+            if ($this->hasPermission($permission)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
     public function getMemberIdDisplayAttribute(): string
     {
         return $this->member?->member_id ?? '—';

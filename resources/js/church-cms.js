@@ -333,6 +333,28 @@ window.toggleDark = function(cb) {
   const enabled = !!cb.checked;
   applyDarkMode(enabled);
   setUiSetting('darkMode', enabled);
+  updateThemeButton();
+}
+
+window.toggleTheme = function() {
+  const settings = readUiSettings();
+  const enabled = !(typeof settings.darkMode === 'boolean' ? settings.darkMode : false);
+  applyDarkMode(enabled);
+  setUiSetting('darkMode', enabled);
+  updateThemeButton();
+  const darkToggle = document.getElementById('darkToggle');
+  if (darkToggle) darkToggle.checked = enabled;
+}
+
+window.updateThemeButton = function() {
+  const settings = readUiSettings();
+  const dark = typeof settings.darkMode === 'boolean' ? settings.darkMode : false;
+  document.querySelectorAll('[data-theme-btn]').forEach(btn => {
+    const moon = btn.querySelector('.theme-icon-moon');
+    const sun = btn.querySelector('.theme-icon-sun');
+    if (moon) moon.style.display = dark ? 'none' : 'block';
+    if (sun) sun.style.display = dark ? 'block' : 'none';
+  });
 }
 
 window.toggleAnim = function(type, cb) {
@@ -368,6 +390,7 @@ window.setSidebarStyle = function(val) {
 window.resetSettings = function() {
   document.documentElement.removeAttribute('data-theme');
   document.documentElement.style.cssText = '';
+  updateThemeButton();
   const darkToggle = document.getElementById('darkToggle');
   if (darkToggle) darkToggle.checked = false;
   try { localStorage.removeItem(uiSettingsStorageKey); } catch {}
@@ -388,6 +411,7 @@ window.resetSettings = function() {
 
 document.addEventListener('DOMContentLoaded', () => {
   syncSettingsPanelControls(readUiSettings());
+  updateThemeButton();
 });
 
 // ========== TOAST ==========

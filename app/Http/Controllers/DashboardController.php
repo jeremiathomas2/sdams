@@ -43,11 +43,13 @@ class DashboardController extends Controller
 
         $avgAttendance = $totalAttendance > 0 ? round(($presentCount / $totalAttendance) * 100) : 0;
 
-        $monthlyOfferingsChart = Offering::selectRaw('MONTH(date) as month, SUM(amount) as total')
-            ->whereYear('date', now()->year)
-            ->groupByRaw('MONTH(date)')
-            ->pluck('total', 'month')
-            ->toArray();
+        $monthlyOfferingsChart = [];
+        $yearOfferings = Offering::whereYear('date', now()->year)->get(['date', 'amount']);
+        foreach ($yearOfferings as $row) {
+            $month = (int) substr($row->date, 5, 2);
+            $monthlyOfferingsChart[$month] = ($monthlyOfferingsChart[$month] ?? 0) + $row->amount;
+        }
+        ksort($monthlyOfferingsChart);
 
         $statusCounts = Member::selectRaw('membership_status, count(*) as count')
             ->groupBy('membership_status')

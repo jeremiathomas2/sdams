@@ -3,7 +3,7 @@
 @section('content')
     <div class="auth-page active" id="page-register">
       <div class="auth-title">Create Account</div>
-      <div class="auth-sub">Register a new administrator account</div>
+      <div class="auth-sub">Register a new member account</div>
       
       @if ($errors->any())
       <div class="alert alert-danger">
@@ -28,15 +28,6 @@
             <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             <input class="form-input" type="email" name="email" placeholder="john@church.org" value="{{ old('email') }}" required>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Role</label>
-          <select class="form-input" name="role" required>
-            <option value="Administrator">Administrator</option>
-            <option value="Finance Clerk">Finance Clerk</option>
-            <option value="Membership Clerk">Membership Clerk</option>
-            <option value="Pastor">Pastor</option>
-          </select>
         </div>
         <div class="form-group">
           <label class="form-label">Password</label>

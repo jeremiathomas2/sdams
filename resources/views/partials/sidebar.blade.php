@@ -9,12 +9,15 @@
       </div>
 
       @php
-        $userRole = auth()->user()->role ?? '';
-        $canManageMembers = in_array($userRole, ['Administrator', 'Pastor', 'Membership Clerk']);
-        $canManageFinance = in_array($userRole, ['Administrator', 'Finance Clerk']);
-        $canManageTransfers = in_array($userRole, ['Administrator', 'Pastor', 'Membership Clerk']);
-        $canViewReports = in_array($userRole, ['Administrator', 'Pastor']);
-        $canManageUsers = $userRole === 'Administrator';
+        $user = auth()->user();
+        $canManageMembers = $user->hasAnyPermission(['members.view', 'members.create', 'members.edit', 'members.delete', 'members.export']);
+        $canManageFinance = $user->hasAnyPermission(['finance.view', 'finance.create', 'finance.edit', 'finance.delete', 'finance.funds', 'finance.bulk', 'finance.export']);
+        $canManageTransfers = $user->hasAnyPermission(['transfers.view', 'transfers.create', 'transfers.edit', 'transfers.delete']);
+        $canViewReports = $user->hasAnyPermission(['reports.view']);
+        $canManageUsers = $user->hasAnyPermission(['users.view', 'users.create', 'users.edit', 'users.delete']);
+        $canManageRoles = $user->hasAnyPermission(['roles.manage']);
+        $canViewAudit = $user->hasAnyPermission(['audit.view', 'audit.export']);
+        $canManageSettings = $user->hasAnyPermission(['settings.manage']);
       @endphp
 
       @if($canManageMembers)
@@ -108,9 +111,10 @@
       </div>
       @endif
 
-      @if($canManageUsers)
+      @if($canManageUsers || $canManageRoles || $canViewAudit || $canManageSettings)
       <div class="sidebar-section">Administration</div>
 
+      @if($canManageUsers || $canManageRoles || $canViewAudit)
       <!-- Users -->
       <div class="sidebar-item">
         <div class="sidebar-link {{ request()->routeIs('users.*') ? 'active' : '' }}" id="nav-users" onclick="toggleSubmenu('sub-users','nav-users')">
@@ -119,12 +123,20 @@
           <svg class="arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
         <div class="sidebar-submenu {{ request()->routeIs('users.*') ? 'open' : '' }}" id="sub-users" style="{{ request()->routeIs('users.*') ? 'max-height: 600px;' : '' }}">
+          @if($canManageUsers)
           <a href="{{ route('users.index') }}" class="sidebar-sub-link {{ request()->routeIs('users.index') ? 'active' : '' }}"><span>All Users</span></a>
+          @endif
+          @if($canManageRoles)
           <a href="{{ route('users.roles') }}" class="sidebar-sub-link {{ request()->routeIs('users.roles') ? 'active' : '' }}"><span>Roles & Permissions</span></a>
+          @endif
+          @if($canViewAudit)
           <a href="{{ route('users.audit') }}" class="sidebar-sub-link {{ request()->routeIs('users.audit') ? 'active' : '' }}"><span>Audit Logs</span></a>
+          @endif
         </div>
       </div>
+      @endif
 
+      @if($canManageSettings)
       <!-- Settings -->
       <div class="sidebar-item">
         <a href="{{ route('settings.index') }}" class="sidebar-link {{ request()->routeIs('settings.index') ? 'active' : '' }}">
@@ -132,6 +144,7 @@
           <span>System Settings</span>
         </a>
       </div>
+      @endif
       @endif
 
       </div>

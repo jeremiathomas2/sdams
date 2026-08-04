@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Member;
 use App\Models\AuditLog;
+use App\Models\Role;
+use App\Models\Permission;
 use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +25,8 @@ class UserController extends Controller
     public function create()
     {
         $members = Member::orderBy('member_id')->get();
-        return view('users.create', compact('members'));
+        $roles = Role::orderBy('name')->get();
+        return view('users.create', compact('members', 'roles'));
     }
 
     public function store(Request $request)
@@ -64,7 +67,8 @@ class UserController extends Controller
     public function edit(User $user)
     {
         $members = Member::orderBy('member_id')->get();
-        return view('users.edit', compact('user', 'members'));
+        $roles = Role::orderBy('name')->get();
+        return view('users.edit', compact('user', 'members', 'roles'));
     }
 
     public function update(Request $request, User $user)
@@ -131,7 +135,100 @@ class UserController extends Controller
 
     public function roles()
     {
-        return view('users.roles');
+        $roles = Role::with('permissions')->orderBy('name')->get();
+        $permissionGroups = config('roles.permissions', []);
+        $allPermissions = Permission::all();
+        $usersByRole = User::whereIn('role', $roles->pluck('name'))->get()->groupBy('role');
+
+        return view('users.roles', compact('roles', 'permissionGroups', 'allPermissions', 'usersByRole'));
+    }
+
+    public function storeRole(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name',
+            'label' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        $role = Role::create([
+            'name' => trim($validated['name']),
+            'label' => $validated['label'] ?? null,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        AuditService::created('Role', $role->id, $role->toArray(), 'Role created: ' . $role->name);
+
+        return redirect()->route('users.roles')->with('success', 'Role "' . $role->name . '" created successfully!');
+    }
+
+    public function updateRole(Request $request, Role $role)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255|unique:roles,name,' . $role->id,
+            'label' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+        ]);
+
+        if (strcasecmp($validated['name'], 'Administrator') === 0 && strcasecmp($role->name, 'Administrator') !== 0) {
+            return back()->withErrors(['name' => 'You cannot use "Administrator" as a custom role name.'])->withInput();
+        }
+
+        if (strcasecmp($role->name, $validated['name']) !== 0 && $role->user_count > 0) {
+            return back()->withErrors(['name' => 'This role has assigned users, so its name cannot be changed. Edit users first, or keep the current name.'])->withInput();
+        }
+
+        $oldData = $role->toArray();
+        $role->update([
+            'name' => trim($validated['name']),
+            'label' => $validated['label'] ?? null,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        AuditService::updated('Role', $role->id, $oldData, $role->toArray(), 'Role updated: ' . $role->name);
+
+        return redirect()->route('users.roles')->with('success', 'Role "' . $role->name . '" updated successfully!');
+    }
+
+    public function destroyRole(Role $role)
+    {
+        if (strcasecmp($role->name, 'Administrator') === 0) {
+            return redirect()->route('users.roles')->with('error', 'The Administrator role cannot be deleted.');
+        }
+
+        if ($role->user_count > 0) {
+            return redirect()->route('users.roles')->with('error', 'Role "' . $role->name . '" has assigned users. Reassign or delete those users before removing this role.');
+        }
+
+        $oldData = $role->toArray();
+        $role->permissions()->detach();
+        $role->delete();
+
+        AuditService::deleted('Role', $role->id, $oldData, 'Role deleted: ' . $oldData['name']);
+
+        return redirect()->route('users.roles')->with('success', 'Role "' . $oldData['name'] . '" deleted successfully!');
+    }
+
+    public function syncPermissions(Request $request, Role $role)
+    {
+        $permissionIds = $request->validate([
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'integer|exists:permissions,id',
+        ])['permissions'] ?? [];
+
+        $oldNames = $role->permissions->pluck('name')->all();
+        $role->permissions()->sync($permissionIds);
+        $newNames = Permission::whereIn('id', $permissionIds)->pluck('name')->all();
+
+        AuditService::updated(
+            'Role',
+            $role->id,
+            $oldNames,
+            $newNames,
+            'Permissions updated for role "' . $role->name . '"'
+        );
+
+        return redirect()->route('users.roles')->with('success', 'Permissions updated for role "' . $role->name . '" successfully!');
     }
 
     public function audit(Request $request)

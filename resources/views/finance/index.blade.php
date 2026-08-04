@@ -19,6 +19,67 @@
     </div>
 </div>
 
+<div class="card" style="margin-bottom:16px">
+    <form action="{{ request()->url() }}" method="GET" autocomplete="off">
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <div style="flex:1;min-width:220px;position:relative">
+                <svg style="position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text-muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" name="q" class="form-control" value="{{ request('q') }}" placeholder="Search by member, member ID, receipt # or notes..." style="padding-left:36px">
+            </div>
+            <select name="type" class="form-control" style="width:180px">
+                <option value="">All Types</option>
+                @foreach($types as $type)
+                <option value="{{ $type }}" @selected(request('type') === $type)>{{ $type }}</option>
+                @endforeach
+            </select>
+            <select name="fund" class="form-control" style="width:180px">
+                <option value="">All Funds</option>
+                @foreach($funds as $fund)
+                <option value="{{ $fund->id }}" @selected(request('fund') !== null && (string) request('fund') === (string) $fund->id)>{{ $fund->name }}</option>
+                @endforeach
+            </select>
+            <label style="display:flex;align-items:center;gap:6px;font-size:14px;cursor:pointer">
+                <input type="checkbox" name="has_receipt" value="1" @checked(request()->boolean('has_receipt'))>
+                Has receipt
+            </label>
+            <button type="submit" class="btn btn-accent">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                Filter
+            </button>
+            <a href="{{ request()->url() }}" class="btn btn-ghost">Reset</a>
+        </div>
+
+        <details style="margin-top:12px">
+            <summary style="cursor:pointer;font-size:14px;color:var(--text-muted)">Advanced filters (date &amp; amount)</summary>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:12px">
+                <div class="form-group-app" style="margin-bottom:0">
+                    <label class="form-label-app">Date from</label>
+                    <input type="date" name="date_from" class="form-control" value="{{ request('date_from') }}">
+                </div>
+                <div class="form-group-app" style="margin-bottom:0">
+                    <label class="form-label-app">Date to</label>
+                    <input type="date" name="date_to" class="form-control" value="{{ request('date_to') }}">
+                </div>
+                <div class="form-group-app" style="margin-bottom:0">
+                    <label class="form-label-app">Min amount (TZS)</label>
+                    <input type="number" name="amount_min" class="form-control" value="{{ request('amount_min') }}" min="0" step="any">
+                </div>
+                <div class="form-group-app" style="margin-bottom:0">
+                    <label class="form-label-app">Max amount (TZS)</label>
+                    <input type="number" name="amount_max" class="form-control" value="{{ request('amount_max') }}" min="0" step="any">
+                </div>
+            </div>
+        </details>
+    </form>
+</div>
+
+@if(isset($summary))
+<div style="display:flex;gap:24px;flex-wrap:wrap;align-items:center;margin-bottom:12px;font-size:14px">
+    <span><strong style="font-size:18px">{{ number_format($summary->count) }}</strong> {{ $summary->count == 1 ? 'record' : 'records' }} found</span>
+    <span>Total: <strong style="font-size:18px">TZS {{ number_format($summary->total, 2) }}</strong></span>
+</div>
+@endif
+
 <div class="card">
     <div class="table-wrap">
         <table>
@@ -34,7 +95,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($offerings as $offering)
+                @forelse($offerings as $offering)
                 <tr>
                     <td>{{ $offering->date }}</td>
                     <td>{{ $offering->member->full_name }}</td>
@@ -53,7 +114,11 @@
                         </div>
                     </td>
                 </tr>
-                @endforeach
+                @empty
+                <tr>
+                    <td colspan="7" style="text-align:center;padding:28px;color:var(--text-muted)">No offerings match your filters.</td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
