@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Member;
 use App\Models\Offering;
+use App\Models\Setting;
 use App\Models\Transfer;
 use App\Models\Event;
 use Illuminate\Support\Facades\DB;
@@ -62,6 +63,8 @@ class DashboardController extends Controller
 
         $recentEvents = Event::latest()->take(3)->get();
 
+        $churchName = Setting::getValue('church_name', 'SDA Church');
+
         return view('dashboard', compact(
             'totalMembers',
             'activeMembers',
@@ -74,7 +77,8 @@ class DashboardController extends Controller
             'statusCounts',
             'recentMembers',
             'recentOfferings',
-            'recentEvents'
+            'recentEvents',
+            'churchName'
         ));
     }
 }
