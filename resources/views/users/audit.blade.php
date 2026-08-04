@@ -174,7 +174,11 @@
                     </td>
                     <td>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <div class="member-avatar" style="width:30px;height:30px;font-size:0.7rem">{{ substr($log->user->name ?? 'S', 0, 1) }}</div>
+                            @if($log->user)
+                                @include('partials.avatar', ['entity' => $log->user, 'size' => 30, 'fontSize' => '0.7rem'])
+                            @else
+                                <div class="member-avatar" style="width:30px;height:30px;font-size:0.7rem">S</div>
+                            @endif
                             <div>
                                 <div style="font-weight:600;font-size:0.85rem">{{ $log->user->name ?? 'System' }}</div>
                                 @if($log->user)

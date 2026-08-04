@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Member;
 use App\Services\AuditService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class MemberController extends Controller
 {
@@ -34,13 +35,19 @@ class MemberController extends Controller
             'membership_class' => 'required|string',
             'membership_status' => 'required|string',
             'department_ministry' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
         $validated['member_id'] = 'SDA-' . rand(1000, 9999);
 
         $member = Member::create($validated);
 
-        AuditService::created('Member', $member->id, $validated, 'Member added: ' . $member->first_name . ' ' . $member->last_name);
+        if ($request->hasFile('photo')) {
+            $member->photo_path = $request->file('photo')->store('avatars/members', 'public');
+            $member->save();
+        }
+
+        AuditService::created('Member', $member->id, $member->toArray(), 'Member added: ' . $member->first_name . ' ' . $member->last_name);
 
         return redirect()->route('members.index')->with('success', 'Member added successfully!');
     }
@@ -70,12 +77,26 @@ class MemberController extends Controller
             'membership_class' => 'required|string',
             'membership_status' => 'required|string',
             'department_ministry' => 'nullable|string',
+            'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
+
+        if ($request->boolean('remove_photo') && $member->photo_path) {
+            Storage::disk('public')->delete($member->photo_path);
+            $validated['photo_path'] = null;
+        }
+
+        if ($request->hasFile('photo')) {
+            if ($member->photo_path) {
+                Storage::disk('public')->delete($member->photo_path);
+            }
+
+            $validated['photo_path'] = $request->file('photo')->store('avatars/members', 'public');
+        }
 
         $oldData = $member->toArray();
         $member->update($validated);
 
-        AuditService::updated('Member', $member->id, $oldData, $validated, 'Member updated: ' . $member->first_name . ' ' . $member->last_name);
+        AuditService::updated('Member', $member->id, $oldData, $member->toArray(), 'Member updated: ' . $member->first_name . ' ' . $member->last_name);
 
         return redirect()->route('members.index')->with('success', 'Member updated successfully!');
     }
@@ -84,6 +105,10 @@ class MemberController extends Controller
     {
         $oldData = $member->toArray();
         $member->delete();
+
+        if ($oldData['photo_path'] ?? null) {
+            Storage::disk('public')->delete($oldData['photo_path']);
+        }
 
         AuditService::deleted('Member', $member->id, $oldData, 'Member deleted: ' . $oldData['first_name'] . ' ' . $oldData['last_name']);
 

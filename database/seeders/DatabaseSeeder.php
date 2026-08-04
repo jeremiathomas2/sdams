@@ -53,5 +53,17 @@ class DatabaseSeeder extends Seeder
         $this->call([
             MemberSeeder::class,
         ]);
+
+        // Link Member-role user accounts to random member records so their
+        // membership numbers (Member IDs) appear across the user module.
+        $members = \App\Models\Member::orderBy('id')->pluck('id');
+        User::where('role', 'Member')->get()
+            ->each(function (User $user) use ($members) {
+                if ($members->isEmpty()) {
+                    return;
+                }
+
+                $user->update(['member_id' => $members->shift()]);
+            });
     }
 }

@@ -201,12 +201,12 @@ input, select, textarea { font-family: 'Nunito Sans', sans-serif; }
 .avatar-dropdown {
   position: absolute; top: calc(100% + 10px); right: 0; background: var(--card); border-radius: 12px;
   box-shadow: var(--shadow-lg); min-width: 200px; border: 1px solid var(--border); overflow: hidden;
-  display: none; z-index: 999;
+  display: none; z-index: 999; color: var(--text);
 }
 .avatar-dropdown.open { display: block; animation: dropIn 0.2s ease; }
 @keyframes dropIn { from{transform:translateY(-8px);opacity:0} to{transform:translateY(0);opacity:1} }
 .avatar-dropdown-header { padding: 14px 16px; border-bottom: 1px solid var(--border); }
-.avatar-dropdown-header h4 { font-size: 0.9rem; font-weight: 700; }
+.avatar-dropdown-header h4 { font-size: 0.9rem; font-weight: 700; color: var(--text); }
 .avatar-dropdown-header p { font-size: 0.78rem; color: var(--text-muted); }
 .avatar-dropdown a { display: flex; align-items: center; gap: 10px; padding: 10px 16px; font-size: 0.88rem; color: var(--text); transition: var(--hover-anim); }
 .avatar-dropdown a:hover { background: var(--bg); color: var(--primary); }
@@ -467,3 +467,34 @@ textarea.form-control { resize: vertical; min-height: 90px; }
 .toast-title { font-size:0.87rem; font-weight:700; }
 .toast-msg { font-size:0.8rem; color:var(--text-muted); margin-top:2px; }
 .member-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.78rem; font-weight:700; flex-shrink:0; background:rgba(26,86,160,0.12); color:var(--primary); }
+
+/* ========== PROFILE / AVATAR IMAGES ========== */
+.avatar-img { border-radius:50%; object-fit:cover; flex-shrink:0; }
+.avatar-img-ring { border:2px solid rgba(255,255,255,0.3); }
+.header-avatar.avatar-with-photo { border:none; }
+.header-avatar.avatar-with-photo img { width:100%; height:100%; object-fit:cover; border-radius:50%; }
+.profile-avatar-wrap { position:relative; display:inline-block; }
+.profile-avatar-wrap .member-avatar, .profile-avatar-wrap .avatar-img { box-shadow:var(--shadow-lg); }
+
+/* ========== COMBOBOX (searchable select + add new) ========== */
+.combobox { position: relative; }
+.combobox .form-control { padding-right: 30px; }
+.combobox .combobox-caret {
+  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  width: 15px; height: 15px; color: var(--text-muted); pointer-events: none;
+}
+.combobox[data-locked="true"] .combobox-caret { display: none; }
+.combobox-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 800;
+  background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: var(--shadow-lg); max-height: 220px; overflow-y: auto; display: none;
+}
+.combobox-list.open { display: block; animation: dropIn 0.15s ease; }
+.combobox-item { padding: 9px 12px; font-size: 0.87rem; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.combobox-item:hover, .combobox-item.highlighted { background: var(--bg); color: var(--primary); }
+.combobox-item .combobox-item-icon { width: 15px; height: 15px; flex-shrink: 0; color: var(--text-muted); }
+.combobox-item.add { border-top: 1px dashed var(--border); color: var(--accent); font-weight: 600; }
+.combobox-item.add:hover { background: rgba(245,158,11,0.08); color: var(--accent); }
+.combobox-empty { padding: 10px 12px; font-size: 0.8rem; color: var(--text-muted); }
+.combobox-lock-hint { display: inline-flex; align-items: center; gap: 5px; font-size: 0.75rem; color: var(--text-muted); margin-top: 5px; }
+.combobox-lock-hint svg { width: 13px; height: 13px; }

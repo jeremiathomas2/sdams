@@ -20,6 +20,7 @@
         <table>
             <thead>
                 <tr>
+                    <th>Member ID</th>
                     <th>Name</th>
                     <th>Email</th>
                     <th>Role</th>
@@ -31,8 +32,15 @@
                 @foreach($users as $user)
                 <tr>
                     <td>
+                        @if($user->member)
+                            <a href="{{ route('members.show', $user->member) }}"><code>{{ $user->member->member_id }}</code></a>
+                        @else
+                            <span style="color:var(--text-muted)">—</span>
+                        @endif
+                    </td>
+                    <td>
                         <div style="display:flex;align-items:center;gap:8px">
-                            <div class="member-avatar">{{ substr($user->name, 0, 1) }}</div>
+                            @include('partials.avatar', ['entity' => $user, 'size' => 34])
                             {{ $user->name }}
                         </div>
                     </td>

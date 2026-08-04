@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'member_id',
+    'photo_path',
     'first_name',
     'middle_name',
     'last_name',
@@ -45,5 +46,25 @@ class Member extends Model
     public function getFullNameAttribute()
     {
         return "{$this->first_name} {$this->middle_name} {$this->last_name}";
+    }
+
+    public function getPhotoUrlAttribute(): ?string
+    {
+        return $this->photo_path
+            ? asset('storage/' . $this->photo_path)
+            : null;
+    }
+
+    public function getHasPhotoAttribute(): bool
+    {
+        return (bool) $this->photo_path;
+    }
+
+    public function getInitialsAttribute(): string
+    {
+        $first = $this->first_name[0] ?? '';
+        $last = $this->last_name[0] ?? '';
+
+        return strtoupper($first . $last);
     }
 }

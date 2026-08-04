@@ -87,4 +87,36 @@ class TransferTest extends TestCase
         $response = $this->actingAs($this->membershipClerk)->get('/transfers-history');
         $response->assertStatus(200);
     }
+
+    public function test_transfer_rejects_same_from_and_to_church(): void
+    {
+        $member = Member::factory()->create();
+
+        $response = $this->actingAs($this->membershipClerk)->post('/transfers', [
+            'member_id' => $member->id,
+            'type' => 'Out',
+            'from_church' => 'Central SDA',
+            'to_church' => 'central sda',
+            'request_date' => '2026-07-26',
+        ]);
+
+        $response->assertSessionHasErrors('from_church');
+        $this->assertDatabaseMissing('transfers', ['member_id' => $member->id]);
+    }
+
+    public function test_transfer_create_form_lists_known_churches(): void
+    {
+        $member = Member::factory()->create();
+        Transfer::factory()->create([
+            'member_id' => $member->id,
+            'from_church' => 'Riverside SDA',
+            'to_church' => 'Central SDA',
+        ]);
+
+        $response = $this->actingAs($this->membershipClerk)->get('/transfers/create');
+
+        $response->assertStatus(200);
+        $response->assertSee('Riverside SDA');
+        $response->assertSee('Central SDA');
+    }
 }

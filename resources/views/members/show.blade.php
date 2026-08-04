@@ -17,7 +17,7 @@
 </div>
 
 <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
-    <div class="member-avatar" style="width:60px;height:60px;font-size:1.4rem">{{ substr($member->first_name, 0, 1) }}{{ substr($member->last_name, 0, 1) }}</div>
+    @include('partials.avatar', ['entity' => $member, 'size' => 64, 'fontSize' => '1.4rem', 'extraStyle' => 'border:2px solid var(--border)'])
     <div>
         <div style="font-weight:800;font-size:1.2rem">{{ $member->full_name }}</div>
         <div style="color:var(--text-muted);font-size:0.9rem">{{ $member->member_id }} &middot; {{ $member->gender }}</div>

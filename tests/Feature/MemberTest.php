@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Models\User;
 use App\Models\Member;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class MemberTest extends TestCase
@@ -98,5 +100,49 @@ class MemberTest extends TestCase
 
         $response = $this->actingAs($this->admin)->get('/members-search?query=John');
         $response->assertStatus(200);
+    }
+
+    public function test_member_can_be_created_with_photo(): void
+    {
+        Storage::fake('public');
+
+        $response = $this->actingAs($this->admin)->post('/members', [
+            'first_name' => 'John',
+            'last_name' => 'Doe',
+            'date_of_birth' => '1990-01-01',
+            'gender' => 'Male',
+            'phone_number' => '0712345678',
+            'membership_class' => 'Baptized',
+            'membership_status' => 'Active',
+            'photo' => UploadedFile::fake()->image('member.jpg'),
+        ]);
+
+        $response->assertRedirect('/members');
+        $member = Member::where('first_name', 'John')->first();
+        $this->assertNotNull($member->photo_path);
+        $this->assertTrue($member->has_photo);
+        Storage::disk('public')->assertExists($member->photo_path);
+    }
+
+    public function test_member_photo_can_be_removed(): void
+    {
+        Storage::fake('public');
+        $member = Member::factory()->create(['photo_path' => 'avatars/members/old.jpg']);
+        Storage::disk('public')->put('avatars/members/old.jpg', 'fake-content');
+
+        $response = $this->actingAs($this->admin)->put("/members/{$member->id}", [
+            'first_name' => 'Jane',
+            'last_name' => 'Doe',
+            'date_of_birth' => '1990-01-01',
+            'gender' => 'Female',
+            'phone_number' => '0712345678',
+            'membership_class' => 'Baptized',
+            'membership_status' => 'Active',
+            'remove_photo' => '1',
+        ]);
+
+        $response->assertRedirect('/members');
+        $this->assertDatabaseHas('members', ['id' => $member->id, 'photo_path' => null]);
+        Storage::disk('public')->assertMissing('avatars/members/old.jpg');
     }
 }

@@ -10,7 +10,7 @@
 </div>
 
 <div class="card">
-    <form action="{{ route('members.store') }}" method="POST">
+    <form action="{{ route('members.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="grid-3">
             <div class="form-group-app">
@@ -91,9 +91,16 @@
             </div>
         </div>
 
-        <div class="form-group-app">
-            <label class="form-label-app">Department/Ministry</label>
-            <input type="text" name="department_ministry" class="form-control" placeholder="e.g. Choir, Youth, Deaconry">
+        <div class="grid-2">
+            <div class="form-group-app">
+                <label class="form-label-app">Profile Picture (optional)</label>
+                <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, GIF or WebP · max 2MB</div>
+            </div>
+            <div class="form-group-app">
+                <label class="form-label-app">Department/Ministry</label>
+                <input type="text" name="department_ministry" class="form-control" placeholder="e.g. Choir, Youth, Deaconry">
+            </div>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">

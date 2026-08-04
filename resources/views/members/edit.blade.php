@@ -10,7 +10,7 @@
 </div>
 
 <div class="card">
-    <form action="{{ route('members.update', $member) }}" method="POST">
+    <form action="{{ route('members.update', $member) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <div class="grid-3">
@@ -92,9 +92,29 @@
             </div>
         </div>
 
-        <div class="form-group-app">
-            <label class="form-label-app">Department/Ministry</label>
-            <input type="text" name="department_ministry" class="form-control" value="{{ $member->department_ministry }}" placeholder="e.g. Choir, Youth, Deaconry">
+        <div class="grid-2">
+            <div class="form-group-app">
+                <label class="form-label-app">Profile Picture</label>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    @include('partials.avatar', ['entity' => $member, 'size' => 44, 'fontSize' => '1rem'])
+                    <div style="flex:1;min-width:180px">
+                        <input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                            @if($member->has_photo)
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--danger);cursor:pointer">
+                                <input type="checkbox" name="remove_photo" value="1">
+                                Remove current photo
+                            </label>
+                            @endif
+                            <span style="font-size:0.75rem;color:var(--text-muted)">JPG, PNG, GIF or WebP · max 2MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group-app">
+                <label class="form-label-app">Department/Ministry</label>
+                <input type="text" name="department_ministry" class="form-control" value="{{ $member->department_ministry }}" placeholder="e.g. Choir, Youth, Deaconry">
+            </div>
         </div>
 
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px">

@@ -13,11 +13,21 @@
 </div>
 
 <div class="card">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-        <div class="member-avatar" style="width:44px;height:44px;font-size:1rem">{{ strtoupper(substr($user->name, 0, 1)) }}</div>
-        <div>
-            <div style="font-weight:800;font-size:1.05rem">{{ $user->name }}</div>
+    <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;flex-wrap:wrap">
+        @include('partials.avatar', ['entity' => $user, 'size' => 64, 'fontSize' => '1.3rem', 'extraStyle' => 'border:2px solid var(--border)'])
+        <div style="flex:1;min-width:200px">
+            <div style="font-weight:800;font-size:1.15rem">{{ $user->name }}</div>
             <div style="color:var(--text-muted);font-size:0.85rem">{{ $user->email }}</div>
+            <div style="margin-top:6px">
+                <span class="badge badge-info">{{ $user->role }}</span>
+                @if($user->member)
+                <a href="{{ route('members.show', $user->member) }}" class="badge badge-success" style="text-decoration:none">
+                    Member ID: {{ $user->member->member_id }}
+                </a>
+                @else
+                <span class="badge" style="background:var(--bg);color:var(--text-muted)">Member ID: Not linked</span>
+                @endif
+            </div>
         </div>
     </div>
 
@@ -26,6 +36,19 @@
             <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px">Role</div>
             <div style="font-weight:800">{{ $user->role }}</div>
         </div>
+        <div style="padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg)">
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px">Membership Number</div>
+            <div style="font-weight:800">
+                @if($user->member)
+                    <code style="color:var(--primary)">{{ $user->member->member_id }}</code>
+                @else
+                    <span style="color:var(--text-muted)">Not linked</span>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:12px">
         <div style="padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg)">
             <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px">Email Verification</div>
             <div style="font-weight:800">
@@ -36,6 +59,19 @@
                 @endif
             </div>
         </div>
+        @if($user->member)
+        <div style="padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg)">
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px">Linked Member</div>
+            <div style="font-weight:800">
+                <a href="{{ route('members.show', $user->member) }}" style="text-decoration:none">{{ $user->member->full_name }}</a>
+            </div>
+        </div>
+        @else
+        <div style="padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--bg)">
+            <div style="font-size:0.78rem;color:var(--text-muted);margin-bottom:6px">Linked Member</div>
+            <div style="font-weight:800;color:var(--text-muted)">None</div>
+        </div>
+        @endif
     </div>
 
     <div class="grid-2" style="margin-top:12px">

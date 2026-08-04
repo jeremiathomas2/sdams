@@ -40,7 +40,7 @@
                         <tr>
                             <td>
                                 <div style="display:flex;align-items:center;gap:8px">
-                                    <div class="member-avatar">{{ substr($member->first_name, 0, 1) }}{{ substr($member->last_name, 0, 1) }}</div>
+                                    @include('partials.avatar', ['entity' => $member, 'size' => 34])
                                     {{ $member->full_name }}
                                 </div>
                             </td>

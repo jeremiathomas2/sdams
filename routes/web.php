@@ -7,6 +7,7 @@ use App\Http\Controllers\TransferController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\DashboardController;
@@ -28,6 +29,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    // My Profile - all authenticated users
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
 
     // Member Management - Administrator, Pastor, Membership Clerk
     Route::middleware('role:Administrator,Pastor,Membership Clerk')->group(function () {

@@ -21,7 +21,7 @@
 @endif
 
 <div class="card">
-    <form action="{{ route('users.store') }}" method="POST">
+    <form action="{{ route('users.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
         <div class="grid-2">
             <div class="form-group-app">
@@ -34,18 +34,36 @@
             </div>
         </div>
 
-        <div class="form-group-app">
-            <label class="form-label-app">Role</label>
-            <select name="role" class="form-control" required>
-                <option value="Administrator" {{ old('role') == 'Administrator' ? 'selected' : '' }}>Administrator</option>
-                <option value="Pastor" {{ old('role') == 'Pastor' ? 'selected' : '' }}>Pastor</option>
-                <option value="Finance Clerk" {{ old('role') == 'Finance Clerk' ? 'selected' : '' }}>Finance Clerk</option>
-                <option value="Membership Clerk" {{ old('role') == 'Membership Clerk' ? 'selected' : '' }}>Membership Clerk</option>
-                <option value="Member" {{ old('role') == 'Member' ? 'selected' : '' }}>Member</option>
-            </select>
+        <div class="grid-2">
+            <div class="form-group-app">
+                <label class="form-label-app">Role</label>
+                <select name="role" class="form-control" required>
+                    <option value="Administrator" {{ old('role') == 'Administrator' ? 'selected' : '' }}>Administrator</option>
+                    <option value="Pastor" {{ old('role') == 'Pastor' ? 'selected' : '' }}>Pastor</option>
+                    <option value="Finance Clerk" {{ old('role') == 'Finance Clerk' ? 'selected' : '' }}>Finance Clerk</option>
+                    <option value="Membership Clerk" {{ old('role') == 'Membership Clerk' ? 'selected' : '' }}>Membership Clerk</option>
+                    <option value="Member" {{ old('role') == 'Member' ? 'selected' : '' }}>Member</option>
+                </select>
+            </div>
+            <div class="form-group-app">
+                <label class="form-label-app">Link to Member (Membership Number)</label>
+                <select name="member_id" class="form-control">
+                    <option value="">— Not linked —</option>
+                    @foreach($members as $member)
+                    <option value="{{ $member->id }}" {{ old('member_id') == $member->id ? 'selected' : '' }}>
+                        {{ $member->member_id }} · {{ $member->full_name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
         <div class="grid-2">
+            <div class="form-group-app">
+                <label class="form-label-app">Profile Picture (optional)</label>
+                <input type="file" name="profile_photo" class="form-control" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px">JPG, PNG, GIF or WebP · max 2MB</div>
+            </div>
             <div class="form-group-app">
                 <label class="form-label-app">Password</label>
                 <input type="password" name="password" class="form-control" required minlength="8">

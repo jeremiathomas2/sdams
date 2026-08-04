@@ -21,7 +21,7 @@
 @endif
 
 <div class="card">
-    <form action="{{ route('users.update', $user) }}" method="POST">
+    <form action="{{ route('users.update', $user) }}" method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         <div class="grid-2">
@@ -35,19 +35,50 @@
             </div>
         </div>
 
-        <div class="form-group-app">
-            <label class="form-label-app">Role</label>
-            <select name="role" class="form-control" required>
-                @php($roleValue = old('role', $user->role))
-                <option value="Administrator" {{ $roleValue == 'Administrator' ? 'selected' : '' }}>Administrator</option>
-                <option value="Pastor" {{ $roleValue == 'Pastor' ? 'selected' : '' }}>Pastor</option>
-                <option value="Finance Clerk" {{ $roleValue == 'Finance Clerk' ? 'selected' : '' }}>Finance Clerk</option>
-                <option value="Membership Clerk" {{ $roleValue == 'Membership Clerk' ? 'selected' : '' }}>Membership Clerk</option>
-                <option value="Member" {{ $roleValue == 'Member' ? 'selected' : '' }}>Member</option>
-            </select>
+        <div class="grid-2">
+            <div class="form-group-app">
+                <label class="form-label-app">Role</label>
+                <select name="role" class="form-control" required>
+                    @php($roleValue = old('role', $user->role))
+                    <option value="Administrator" {{ $roleValue == 'Administrator' ? 'selected' : '' }}>Administrator</option>
+                    <option value="Pastor" {{ $roleValue == 'Pastor' ? 'selected' : '' }}>Pastor</option>
+                    <option value="Finance Clerk" {{ $roleValue == 'Finance Clerk' ? 'selected' : '' }}>Finance Clerk</option>
+                    <option value="Membership Clerk" {{ $roleValue == 'Membership Clerk' ? 'selected' : '' }}>Membership Clerk</option>
+                    <option value="Member" {{ $roleValue == 'Member' ? 'selected' : '' }}>Member</option>
+                </select>
+            </div>
+            <div class="form-group-app">
+                <label class="form-label-app">Link to Member (Membership Number)</label>
+                <select name="member_id" class="form-control">
+                    <option value="">— Not linked —</option>
+                    @foreach($members as $member)
+                    <option value="{{ $member->id }}" {{ old('member_id', $user->member_id) == $member->id ? 'selected' : '' }}>
+                        {{ $member->member_id }} · {{ $member->full_name }}
+                    </option>
+                    @endforeach
+                </select>
+            </div>
         </div>
 
         <div class="grid-2">
+            <div class="form-group-app">
+                <label class="form-label-app">Profile Picture</label>
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+                    @include('partials.avatar', ['entity' => $user, 'size' => 44, 'fontSize' => '1rem'])
+                    <div style="flex:1;min-width:180px">
+                        <input type="file" name="profile_photo" class="form-control" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
+                        <div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+                            @if($user->has_photo)
+                            <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:var(--danger);cursor:pointer">
+                                <input type="checkbox" name="remove_photo" value="1" {{ old('remove_photo') ? 'checked' : '' }}>
+                                Remove current photo
+                            </label>
+                            @endif
+                            <span style="font-size:0.75rem;color:var(--text-muted)">JPG, PNG, GIF or WebP · max 2MB</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="form-group-app">
                 <label class="form-label-app">New Password (leave blank to keep current)</label>
                 <input type="password" name="password" class="form-control" minlength="8">

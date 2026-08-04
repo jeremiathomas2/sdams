@@ -3,23 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Member;
 use App\Models\AuditLog;
+use App\Services\AuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Response;
+use Illuminate\Support\Facades\Storage;
 
 class UserController extends Controller
 {
     public function index()
     {
-        $users = User::latest()->paginate(10);
+        $users = User::with('member')->latest()->paginate(10);
         return view('users.index', compact('users'));
     }
 
     public function create()
     {
-        return view('users.create');
+        $members = Member::orderBy('member_id')->get();
+        return view('users.create', compact('members'));
     }
 
     public function store(Request $request)
@@ -29,26 +33,38 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'role' => 'required|string',
             'password' => 'required|string|min:8|confirmed',
+            'member_id' => 'nullable|integer|exists:members,id',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
 
-        User::create([
+        $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'member_id' => $validated['member_id'] ?? null,
             'password' => Hash::make($validated['password']),
         ]);
+
+        if ($request->hasFile('profile_photo')) {
+            $user->profile_photo_path = $request->file('profile_photo')->store('avatars/users', 'public');
+            $user->save();
+        }
+
+        AuditService::created('User', $user->id, $user->only(['name', 'email', 'role', 'member_id', 'profile_photo_path']), 'User created: ' . $user->name);
 
         return redirect()->route('users.index')->with('success', 'User created successfully!');
     }
 
     public function show(User $user)
     {
+        $user->load('member');
         return view('users.show', compact('user'));
     }
 
     public function edit(User $user)
     {
-        return view('users.edit', compact('user'));
+        $members = Member::orderBy('member_id')->get();
+        return view('users.edit', compact('user', 'members'));
     }
 
     public function update(Request $request, User $user)
@@ -58,19 +74,39 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
             'role' => 'required|string',
             'password' => 'nullable|string|min:8|confirmed',
+            'member_id' => 'nullable|integer|exists:members,id',
+            'profile_photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
         ]);
+
+        $oldData = $user->only(['name', 'email', 'role', 'member_id', 'profile_photo_path']);
 
         $data = [
             'name' => $validated['name'],
             'email' => $validated['email'],
             'role' => $validated['role'],
+            'member_id' => $validated['member_id'] ?? null,
         ];
 
         if ($request->filled('password')) {
             $data['password'] = Hash::make($validated['password']);
         }
 
+        if ($request->boolean('remove_photo') && $user->profile_photo_path) {
+            Storage::disk('public')->delete($user->profile_photo_path);
+            $data['profile_photo_path'] = null;
+        }
+
+        if ($request->hasFile('profile_photo')) {
+            if ($user->profile_photo_path) {
+                Storage::disk('public')->delete($user->profile_photo_path);
+            }
+
+            $data['profile_photo_path'] = $request->file('profile_photo')->store('avatars/users', 'public');
+        }
+
         $user->update($data);
+
+        AuditService::updated('User', $user->id, $oldData, $user->fresh()->only(['name', 'email', 'role', 'member_id', 'profile_photo_path']), 'User updated: ' . $user->name);
 
         return redirect()->route('users.index')->with('success', 'User updated successfully!');
     }
@@ -80,7 +116,16 @@ class UserController extends Controller
         if ($user->id == auth()->id()) {
             return redirect()->route('users.index')->with('error', 'You cannot delete yourself!');
         }
+
+        $oldData = $user->toArray();
         $user->delete();
+
+        if ($oldData['profile_photo_path'] ?? null) {
+            Storage::disk('public')->delete($oldData['profile_photo_path']);
+        }
+
+        AuditService::deleted('User', $user->id, $oldData, 'User deleted: ' . $oldData['name']);
+
         return redirect()->route('users.index')->with('success', 'User deleted successfully!');
     }
 

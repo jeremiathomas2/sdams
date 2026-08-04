@@ -22,7 +22,7 @@
 
 <div class="card">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px">
-        <div class="member-avatar" style="width:44px;height:44px;font-size:1rem">{{ substr($transfer->member->first_name, 0, 1) }}{{ substr($transfer->member->last_name, 0, 1) }}</div>
+        @include('partials.avatar', ['entity' => $transfer->member, 'size' => 44, 'fontSize' => '1rem'])
         <div>
             <div style="font-weight:800;font-size:1.05rem">{{ $transfer->member->full_name }}</div>
             <div style="color:var(--text-muted);font-size:0.85rem">{{ $transfer->member->member_id }}</div>
